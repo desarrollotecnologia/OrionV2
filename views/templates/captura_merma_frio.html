@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Captura MERMA FRIO · ORION{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Captura</p>
+    <h1 class="text-3xl font-bold mt-1">Merma frio · nuevo lote</h1>
+    <p class="text-slate-400 text-sm mt-1">Registra un lote ingresado a cava. La merma % y dias en cava se calculan solos.</p>
+  </div>
+  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span class="text-slate-300">Registros manuales:</span>
+    <span id="manualCount" class="text-slate-100 font-medium">--</span>
+  </div>
+</header>
+
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <form id="formMerma" class="card xl:col-span-2 space-y-5">
+    <h2 class="text-lg font-bold mb-1">Datos del lote</h2>
+    <p class="text-xs text-slate-400">Los campos con <span class="text-orion-300">*</span> son obligatorios.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="lbl">Fecha beneficio</label>
+        <input type="date" name="fecha_beneficio" id="f_fb" class="inp" />
+      </div>
+      <div>
+        <label class="lbl">Fecha produccion <span class="text-orion-300">*</span></label>
+        <input type="date" name="fecha_produccion" id="f_fp" required class="inp" />
+        <p class="hint" id="f_dias">Dias en cava se calcula solo</p>
+      </div>
+      <div>
+        <label class="lbl">Especie <span class="text-orion-300">*</span></label>
+        <select name="especie" id="f_especie" required class="inp"></select>
+      </div>
+    </div>
+
+    <div>
+      <label class="lbl">Cliente <span class="text-orion-300">*</span></label>
+      <input type="text" name="cliente" id="f_cliente" list="dl_clientes" required autocomplete="off"
+             placeholder="Empieza a escribir o selecciona un cliente..." class="inp" />
+      <datalist id="dl_clientes"></datalist>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="lbl">Lote</label>
+        <input type="text" name="lote" id="f_lote" placeholder="CCF390" class="inp" />
+      </div>
+      <div>
+        <label class="lbl">Cant. machos</label>
+        <input type="number" step="0.5" name="cant_machos" id="f_machos" min="0" placeholder="0" class="inp" />
+      </div>
+      <div>
+        <label class="lbl">Cant. hembras</label>
+        <input type="number" step="0.5" name="cant_hembras" id="f_hembras" min="0" placeholder="0" class="inp" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="lbl">Total canales (auto)</label>
+        <input type="number" id="f_total" disabled class="inp opacity-70" placeholder="0" />
+      </div>
+      <div>
+        <label class="lbl">Peso caliente (kg)</label>
+        <input type="number" step="0.01" name="peso_caliente" id="f_pc" placeholder="0.00" class="inp" />
+      </div>
+      <div>
+        <label class="lbl">Peso frio (kg)</label>
+        <input type="number" step="0.01" name="peso_frio" id="f_pf" placeholder="0.00" class="inp" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="lbl">Cava</label>
+        <input type="text" name="cava" id="f_cava" list="dl_cavas" placeholder="Ej. 7" class="inp" />
+        <datalist id="dl_cavas"></datalist>
+      </div>
+      <div>
+        <label class="lbl">Observaciones</label>
+        <input type="text" name="observaciones" id="f_obs" placeholder="(se autocompleta con dias en cava)" class="inp" />
+      </div>
+    </div>
+
+    <div class="bg-slate-800/40 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-2 gap-2">
+      <p>Total canales: <span id="prev_total" class="text-cyan-300 font-semibold">0</span></p>
+      <p>Merma frio %: <span id="prev_merma" class="text-rose-300 font-semibold">--</span></p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-3 pt-2">
+      <button type="submit"
+              class="px-5 py-2.5 bg-gradient-to-r from-orion-500 to-orion-700 hover:from-orion-400 hover:to-orion-600 transition rounded-lg font-semibold text-white shadow-lg shadow-orion-700/40">
+        Guardar lote
+      </button>
+      <button type="reset"
+              class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-medium text-slate-200">
+        Limpiar formulario
+      </button>
+    </div>
+  </form>
+
+  <aside class="card">
+    <h2 class="text-lg font-bold">Atajos</h2>
+    <p class="text-xs text-slate-400 mt-1 mb-4">Cavas mas usadas</p>
+    <div id="atajosCavas" class="flex flex-wrap gap-2 mb-6"></div>
+
+    <h3 class="text-sm font-bold mt-4 mb-2 text-slate-300 uppercase tracking-wide">Top clientes (merma)</h3>
+    <p class="text-xs text-slate-500 mb-2">Click para autocompletar</p>
+    <div id="atajosClientes" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1 text-xs"></div>
+  </aside>
+</section>
+
+<section class="card mt-8">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="text-lg font-bold">Lotes manuales recientes</h2>
+      <p class="text-xs text-slate-400">Solo los registros ingresados desde el aplicativo.</p>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead><tr>
+        <th>#</th><th>F. beneficio</th><th>F. produccion</th>
+        <th>Cliente</th><th>Especie</th>
+        <th class="text-right">Canales</th><th class="text-right">P. caliente</th>
+        <th class="text-right">P. frio</th><th class="text-right">Merma %</th>
+        <th>Cava</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tablaManuales"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}"></script>
+{% endblock %}

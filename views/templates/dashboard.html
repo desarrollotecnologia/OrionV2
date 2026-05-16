@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · ORION{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Tablero general</p>
+    <h1 class="text-3xl font-bold mt-1">Dashboard <span id="dashHeaderMes" class="text-slate-400 font-medium"></span></h1>
+    <p id="dashHeaderFecha" class="text-slate-400 text-sm mt-1">Cargando datos en vivo desde el Excel ORION...</p>
+  </div>
+  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span class="text-slate-300">Sincronizado:</span>
+    <span id="lastSync" class="text-slate-100 font-medium">--</span>
+  </div>
+</header>
+
+<!-- ====================== SECCION 1: KPIs ====================== -->
+<div class="section-header">
+  <div class="icon">1</div>
+  <div class="text">
+    <h2>Indicadores clave del periodo</h2>
+    <p>Resumen ejecutivo: mermas, tiempos, presupuesto canales</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">KPIs</span>
+</div>
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+  <div class="kpi-card">
+    <p class="kpi-label">Merma frio (mes)</p>
+    <p class="kpi-value text-cyan-300" id="kpiMermaProm">--</p>
+    <p class="kpi-extra">Lotes: <span id="kpiMermaLotes">--</span></p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">Tiempo merma frio (dias)</p>
+    <p class="kpi-value text-amber-300" id="kpiMermaDias">--</p>
+    <p class="kpi-extra">Min/Max: <span id="kpiMermaDiasRange">--</span></p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">Tiempo produccion</p>
+    <p class="kpi-value text-fuchsia-300" id="kpiTiempoProd">--</p>
+    <p class="kpi-extra" id="kpiTiempoProdRange">--</p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">PPTO Canales (mes)</p>
+    <p class="kpi-value text-emerald-300" id="kpiPpto">--</p>
+    <p class="kpi-extra">Meta <span id="kpiPptoMeta">--</span> · Ejec <span id="kpiPptoEjec">--</span></p>
+  </div>
+</section>
+
+<!-- ====================== SECCION 2: PPTO Canales ====================== -->
+<div class="section-header">
+  <div class="icon">2</div>
+  <div class="text">
+    <h2>Seguimiento ejecucion PPTO Canales</h2>
+    <p>Meta vs ejecucion mensual con porcentaje de cumplimiento</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Mensual</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
+  <div class="card xl:col-span-2">
+    <div class="flex items-center justify-between mb-4">
+      <p class="text-xs text-slate-400">Datos del ano <span id="pptoYear" class="text-slate-200 font-semibold">--</span></p>
+    </div>
+    <div class="h-80"><canvas id="chartPpto"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Cifras del mes</h3>
+    <p class="text-xs text-slate-500 mb-4">% Rendimiento y % Merma por seccion</p>
+    <div id="cifrasMes" class="space-y-3 text-sm"></div>
+  </div>
+</section>
+
+<!-- ====================== SECCION 3: Velocidades ====================== -->
+<div class="section-header">
+  <div class="icon">3</div>
+  <div class="text">
+    <h2>Velocidades de operaciones</h2>
+    <p>Productividad por proceso (canales/h, kg/h)</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Productividad</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
+  <div class="card xl:col-span-2">
+    <div class="h-72"><canvas id="chartVelocidad"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Resumen del dia</h3>
+    <p class="text-xs text-slate-500 mb-4" id="resumenDiaFecha">--</p>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Canales procesados</dt><dd id="resumenCanales" class="font-semibold text-white">--</dd></div>
+      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Kilos procesados</dt><dd id="resumenKilos" class="font-semibold text-white">--</dd></div>
+      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Velocidad canal/h</dt><dd id="resumenCanalH" class="font-semibold text-white">--</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-400">Velocidad kg/h</dt><dd id="resumenKilosH" class="font-semibold text-white">--</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ====================== SECCION 4: Paradas ====================== -->
+<div class="section-header">
+  <div class="icon">4</div>
+  <div class="text">
+    <h2>Paradas y tiempos improductivos</h2>
+    <p>Reporte de paradas por categoria y tendencia diaria</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge" id="paradasBadge">Reporte paradas</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
+  <div class="card xl:col-span-1">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Paradas por categoria</h3>
+    <p class="text-xs text-slate-500 mb-4" id="paradasRangoLabel">--</p>
+    <div class="h-72"><canvas id="chartParadas"></canvas></div>
+  </div>
+  <div class="card xl:col-span-2">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Tendencia diaria</h3>
+    <p class="text-xs text-slate-500 mb-4">Total minutos por dia (ultimos 60 dias con datos)</p>
+    <div class="h-72"><canvas id="chartParadasTendencia"></canvas></div>
+  </div>
+</section>
+
+<section class="card mb-4">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300">Tabla de paradas recientes</h3>
+    <p class="text-xs text-slate-500">Ultimos 15 dias con registros</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead><tr>
+        <th>Fecha</th>
+        <th class="text-right">Tardanza</th>
+        <th class="text-right">Lavado</th>
+        <th class="text-right">Fallas</th>
+        <th class="text-right">Alimentacion</th>
+        <th class="text-right">Recepcion</th>
+        <th class="text-right">Total min</th>
+      </tr></thead>
+      <tbody id="tablaParadasRecientes"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

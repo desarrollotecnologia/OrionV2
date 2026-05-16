@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+_excel_dump.txt
+_explore_excel.py
+_env.txt
+.vscode/
+.idea/
+*.sqlite
+node_modules/

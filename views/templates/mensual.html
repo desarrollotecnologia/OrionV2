@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Mensual · ORION{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Reporte mensual</p>
+    <h1 class="text-3xl font-bold mt-1">
+      <span id="hMes">--</span> · <span id="hAnio">--</span>
+      <span class="text-slate-400 text-base font-medium ml-2" id="hFecha">--</span>
+    </h1>
+    <p class="text-slate-400 text-sm mt-1">Indicadores, cumplimiento, operatividad, paradas y velocidades</p>
+  </div>
+  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span class="text-slate-300">Sincronizado:</span>
+    <span id="lastSync" class="text-slate-100 font-medium">--</span>
+  </div>
+</header>
+
+<!-- ============= 1. Indicadores del mes ============= -->
+<div class="section-header">
+  <div class="icon">1</div>
+  <div class="text">
+    <h2>Indicadores del mes</h2>
+    <p>Bovinos y Porcinos: # canales, kilos por proceso (HOY y ACUMULADO)</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Indicadores</span>
+</div>
+<section class="card mb-2">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead><tr><th>Seccion</th><th>#</th><th>Criterio</th><th class="text-right">Hoy</th><th class="text-right">Acumulado</th></tr></thead>
+      <tbody id="tablaIndicadores"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============= 2. Cumplimiento metas ============= -->
+<div class="section-header">
+  <div class="icon">2</div>
+  <div class="text">
+    <h2>Cumplimiento de metas</h2>
+    <p>Comparativo HOY vs ACUMULADO con porcentaje de cumplimiento</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Metas</span>
+</div>
+<section class="card mb-2">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Criterio</th><th>Tipo</th>
+          <th class="text-right">Meta</th>
+          <th class="text-right">Ejecutado</th>
+          <th class="text-right">Cumplimiento</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCumplimiento"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============= 3. Operatividad y cifras ============= -->
+<div class="section-header">
+  <div class="icon">3</div>
+  <div class="text">
+    <h2>Operatividad y cifras del mes</h2>
+    <p>Personal, % rendimiento y % merma por seccion</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Operatividad</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Operatividad planta</h3>
+    <div class="overflow-x-auto">
+      <table class="orion-table">
+        <thead><tr><th>#</th><th>Criterio</th><th class="text-right">Personas</th><th class="text-right">%</th></tr></thead>
+        <tbody id="tablaOperatividadPlanta"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Cifras del mes</h3>
+    <div id="cifrasMes" class="space-y-3 text-sm mb-6"></div>
+    <h3 class="text-sm font-bold mt-2 mb-3 uppercase tracking-wide text-slate-300">Operatividad ORION</h3>
+    <div id="operatividadList" class="space-y-2 text-sm"></div>
+  </div>
+</section>
+
+<!-- ============= 4. Reporte extras y kilogramos ============= -->
+<div class="section-header">
+  <div class="icon">4</div>
+  <div class="text">
+    <h2>Horas extras y kilogramos</h2>
+    <p>Reporte de extras y kilos por concepto y mes</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Personal / kilos</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Reporte extras</h3>
+    <div class="h-64"><canvas id="chartExtras"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Reporte kilogramos</h3>
+    <div class="h-64"><canvas id="chartKilogramos"></canvas></div>
+  </div>
+</section>
+
+<!-- ============= 5. Merma y paradas ============= -->
+<div class="section-header">
+  <div class="icon">5</div>
+  <div class="text">
+    <h2>Merma frio y paradas</h2>
+    <p>Comportamiento merma mensual y paradas por categoria</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Calidad / paradas</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Merma frio mensual (25-26)</h3>
+    <div class="h-64"><canvas id="chartMerma"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Paradas por categoria</h3>
+    <div class="h-64"><canvas id="chartParadas"></canvas></div>
+  </div>
+</section>
+
+<!-- ============= 6. Velocidades y paradas detalle ============= -->
+<div class="section-header">
+  <div class="icon">6</div>
+  <div class="text">
+    <h2>Detalle de velocidades y paradas</h2>
+    <p>Tablas con los registros recientes</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Detalle</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <div class="card overflow-hidden">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Velocidades de operaciones</h3>
+    <p class="text-xs text-slate-500 mb-3">Ultimos 60 dias con datos</p>
+    <div class="overflow-x-auto max-h-96">
+      <table class="orion-table">
+        <thead><tr><th>Fecha</th><th>Cliente</th><th>Especie</th><th>Proceso</th><th class="text-right">Canal/h</th><th class="text-right">Kg/h</th></tr></thead>
+        <tbody id="tablaVelocidades"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card overflow-hidden">
+    <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Reporte de paradas</h3>
+    <p class="text-xs text-slate-500 mb-3">Ultimos registros del Excel</p>
+    <div class="overflow-x-auto max-h-96">
+      <table class="orion-table">
+        <thead><tr><th>Fecha</th><th class="text-right">Tardanza</th><th class="text-right">Lavado</th><th class="text-right">Fallas</th><th class="text-right">Alimentacion</th><th class="text-right">Total</th></tr></thead>
+        <tbody id="tablaParadas"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mensual.js') }}"></script>
+{% endblock %}

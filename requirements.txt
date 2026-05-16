@@ -1,0 +1,14 @@
+Flask>=3.0.0
+Flask-SocketIO>=5.3.6
+python-socketio>=5.11.0
+python-engineio>=4.9.0
+simple-websocket>=1.0.0
+PyMySQL>=1.1.0
+SQLAlchemy>=2.0.30
+pandas>=2.2.2
+openpyxl>=3.1.2
+watchdog>=4.0.0
+python-dotenv>=1.0.1
+bcrypt>=4.1.2
+itsdangerous>=2.1.2
+Werkzeug>=3.0.1

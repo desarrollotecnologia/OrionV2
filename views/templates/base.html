@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ORION{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2306b6d4'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%230f172a'/%3E%3C/svg%3E" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            orion: {
+              50: '#ecfeff',
+              100: '#cffafe',
+              200: '#a5f3fc',
+              300: '#67e8f9',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              700: '#0e7490',
+              800: '#155e75',
+              900: '#164e63',
+              950: '#083344'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orion.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="font-inter bg-slate-950 text-slate-100 min-h-screen">
+{% if session.user_id %}
+<div class="flex min-h-screen">
+  <aside class="w-64 bg-slate-900/80 border-r border-slate-800 flex flex-col">
+    <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orion-400 to-orion-700 grid place-items-center shadow-lg shadow-orion-700/30">
+        <span class="text-white font-bold">O</span>
+      </div>
+      <div>
+        <p class="text-lg font-bold tracking-tight">ORION</p>
+        <p class="text-xs text-slate-400">Tablero alfa</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1 text-sm overflow-y-auto">
+      <p class="px-3 pb-1 pt-2 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Vistas</p>
+      <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if page=='dashboard' %}active{% endif %}">
+        <span class="dot"></span><span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('mensual.index') }}" class="nav-link {% if page=='mensual' %}active{% endif %}">
+        <span class="dot"></span><span>Mensual</span>
+      </a>
+      <a href="{{ url_for('tablero.index') }}" class="nav-link {% if page=='tablero' %}active{% endif %}">
+        <span class="dot"></span><span>Tablero indicadores</span>
+      </a>
+
+      <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Captura de datos</p>
+      <a href="{{ url_for('captura.base_datos') }}" class="nav-link {% if page=='captura_bd' %}active{% endif %}">
+        <span class="dot"></span><span>Base de datos</span>
+      </a>
+      <a href="{{ url_for('captura.merma_frio') }}" class="nav-link {% if page=='captura_merma' %}active{% endif %}">
+        <span class="dot"></span><span>Merma frio</span>
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 space-y-3">
+      <div class="flex items-center justify-between text-xs">
+        <span class="flex items-center gap-2"><span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>En vivo</span></span>
+        <span id="liveTimestamp" class="text-slate-400">--</span>
+      </div>
+      <button id="syncBtn" class="w-full py-2 px-3 text-sm bg-orion-600 hover:bg-orion-500 transition rounded-lg font-medium shadow shadow-orion-700/30">Sincronizar Excel</button>
+      <div class="text-xs text-slate-400 leading-snug">
+        <span class="block">Sesion:</span>
+        <span class="text-slate-200 font-medium truncate block">{{ session.user_name }}</span>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="text-xs text-slate-300 hover:text-white underline">Cerrar sesion</a>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-6 lg:p-10">
+    <div id="toast" class="hidden fixed top-6 right-6 z-50 bg-slate-800 border border-slate-700 px-4 py-3 rounded-xl shadow-xl text-sm"></div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  {% block fullbody %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
