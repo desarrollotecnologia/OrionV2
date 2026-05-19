@@ -34,7 +34,7 @@ class Config:
 
     # Excel
     EXCEL_PATH = Path(
-        os.getenv("EXCEL_PATH", str(Path.home() / "Downloads" / "ORION.xlsx"))
+        os.getenv("EXCEL_PATH", str(BASE_DIR / "ORION.xlsx"))
     )
 
     # Watcher

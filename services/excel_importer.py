@@ -1,9 +1,21 @@
-"""Importador del Excel ORION.xlsx hacia la base de datos MySQL.
+"""Importador unico del Excel ORION.xlsx hacia MySQL.
 
-Cada hoja relevante del archivo se mapea a una tabla. El importador es
-"idempotente": vacia la tabla antes de cargar (TRUNCATE) y vuelve a
-escribir todo el contenido, asi cada sincronizacion refleja al 100% el
-estado actual del Excel.
+Todas las hojas y modulos se cargan desde este archivo (no hay importadores
+por modulo). Registro central en IMPORT_JOBS al final.
+
+Mapa hoja -> tabla -> modulos web:
+  ORION              -> indicadores_orion     -> Dashboard, Mensual
+  BASE DATOS         -> base_datos            -> Dashboard, Mensual, Captura BD
+  MERMA FRIO         -> merma_frio            -> Dashboard, Captura merma
+  MERMA FRIO% *      -> merma_resumen         -> Mensual
+  PPTO DESP.         -> ppto_desp             -> Dashboard
+  TABLERO IND.       -> tablero_ind           -> Tablero indicadores
+  REPORTEOPER        -> reporte_*             -> Mensual
+  PARADASTD          -> paradas_std           -> Dashboard, Mensual
+  TIEMPO PRODUCCION  -> tiempo_produccion     -> Dashboard
+  CARGOS             -> cargos                -> API /personal
+
+Sincronizacion idempotente: TRUNCATE o DELETE origen=excel, luego INSERT.
 """
 from __future__ import annotations
 
@@ -141,7 +153,21 @@ def _read_sheet(path: Path, name: str) -> pd.DataFrame | None:
         return None
 
 
-# ---------------- Importadores por hoja ----------------
+def _truncate_insert(table: str, insert_sql: str, rows: list[tuple]) -> int:
+    db.execute(f"TRUNCATE TABLE {table}")
+    if rows:
+        db.executemany(insert_sql, rows)
+    return len(rows)
+
+
+def _replace_excel_rows(table: str, insert_sql: str, rows: list[tuple]) -> int:
+    db.execute(f"DELETE FROM {table} WHERE origen = 'excel'")
+    if rows:
+        db.executemany(insert_sql, rows)
+    return len(rows)
+
+
+# ---------------- Importadores por hoja (logica especifica) ----------------
 
 def _import_orion(path: Path) -> int:
     df = _read_sheet(path, "ORION")
@@ -297,16 +323,14 @@ def _import_orion(path: Path) -> int:
             None, None,
         ))
 
-    db.execute("TRUNCATE TABLE indicadores_orion")
-    if rows:
-        db.executemany(
-            "INSERT INTO indicadores_orion "
-            "(mes, anio, fecha, seccion, bloque, item, criterio, hoy, acumulado, "
-            " meta, ejecutado, cumplimiento, cantidad, porcentaje) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "indicadores_orion",
+        "INSERT INTO indicadores_orion "
+        "(mes, anio, fecha, seccion, bloque, item, criterio, hoy, acumulado, "
+        " meta, ejecutado, cumplimiento, cantidad, porcentaje) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_base_datos(path: Path) -> int:
@@ -343,17 +367,15 @@ def _import_base_datos(path: Path) -> int:
             _to_str(cells[r][19] if cells.shape[1] > 19 else None, 20),
         ))
 
-    db.execute("DELETE FROM base_datos WHERE origen = 'excel'")
-    if rows:
-        db.executemany(
-            "INSERT INTO base_datos "
-            "(item, fecha, mes, anio, cliente, especie, limpieza, proceso, operarios, lote, "
-            " canales, kilos, hora_inicio, hora_fin, tiempo_reposo, tiempo_total, "
-            " velocidad_canal_h, velocidad_kilos_h, velocidad_canal_hh, mes_texto, origen) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'excel')",
-            rows,
-        )
-    return len(rows)
+    return _replace_excel_rows(
+        "base_datos",
+        "INSERT INTO base_datos "
+        "(item, fecha, mes, anio, cliente, especie, limpieza, proceso, operarios, lote, "
+        " canales, kilos, hora_inicio, hora_fin, tiempo_reposo, tiempo_total, "
+        " velocidad_canal_h, velocidad_kilos_h, velocidad_canal_hh, mes_texto, origen) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'excel')",
+        rows,
+    )
 
 
 def _import_merma_frio(path: Path) -> int:
@@ -387,17 +409,15 @@ def _import_merma_frio(path: Path) -> int:
             _to_int(cells[r][16] if cells.shape[1] > 16 else None),
             _to_date(cells[r][17] if cells.shape[1] > 17 else None),
         ))
-    db.execute("DELETE FROM merma_frio WHERE origen = 'excel'")
-    if rows:
-        db.executemany(
-            "INSERT INTO merma_frio "
-            "(item, fecha_beneficio, fecha_produccion, mes, cliente, especie, "
-            " cant_machos, cant_hembras, total_canales, lote, peso_caliente, peso_frio, "
-            " merma_frio, cava, observaciones, mes_texto, anio, fecha, origen) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'excel')",
-            rows,
-        )
-    return len(rows)
+    return _replace_excel_rows(
+        "merma_frio",
+        "INSERT INTO merma_frio "
+        "(item, fecha_beneficio, fecha_produccion, mes, cliente, especie, "
+        " cant_machos, cant_hembras, total_canales, lote, peso_caliente, peso_frio, "
+        " merma_frio, cava, observaciones, mes_texto, anio, fecha, origen) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'excel')",
+        rows,
+    )
 
 
 def _import_merma_resumen(path: Path) -> int:
@@ -422,16 +442,14 @@ def _import_merma_resumen(path: Path) -> int:
                 _to_float(cells[r][5]),
                 periodo,
             ))
-    db.execute("TRUNCATE TABLE merma_resumen")
-    if rows:
-        db.executemany(
-            "INSERT INTO merma_resumen "
-            "(item, anio, mes_texto, mes_num, merma_prom_mensual, merma_prom_anual, "
-            " comportamiento, periodo) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "merma_resumen",
+        "INSERT INTO merma_resumen "
+        "(item, anio, mes_texto, mes_num, merma_prom_mensual, merma_prom_anual, "
+        " comportamiento, periodo) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_ppto_desp(path: Path) -> int:
@@ -461,14 +479,12 @@ def _import_ppto_desp(path: Path) -> int:
         if not mes_num and meta is None and ejec is None:
             continue
         rows.append((anio, mes_texto, mes_num, meta, ejec, cump))
-    db.execute("TRUNCATE TABLE ppto_desp")
-    if rows:
-        db.executemany(
-            "INSERT INTO ppto_desp (anio, mes_texto, mes_num, meta, ejecucion, cumplimiento) "
-            "VALUES (%s,%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "ppto_desp",
+        "INSERT INTO ppto_desp (anio, mes_texto, mes_num, meta, ejecucion, cumplimiento) "
+        "VALUES (%s,%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_tablero_ind(path: Path) -> int:
@@ -493,14 +509,12 @@ def _import_tablero_ind(path: Path) -> int:
             ejec = _to_float(cells[r][26] if cells.shape[1] > 26 else None)
             cump = (ejec / meta) if (ejec is not None and meta) else None
             rows.append((especie, semana, meta, ejec, cump))
-    db.execute("TRUNCATE TABLE tablero_ind")
-    if rows:
-        db.executemany(
-            "INSERT INTO tablero_ind (especie, semana, meta, ejecucion, cumplimiento) "
-            "VALUES (%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "tablero_ind",
+        "INSERT INTO tablero_ind (especie, semana, meta, ejecucion, cumplimiento) "
+        "VALUES (%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_reporte_oper(path: Path) -> int:
@@ -617,17 +631,15 @@ def _import_paradas(path: Path) -> int:
             _to_float(cells[r][10] if cells.shape[1] > 10 else None),
             _to_float(cells[r][11] if cells.shape[1] > 11 else None),
         ))
-    db.execute("TRUNCATE TABLE paradas_std")
-    if rows:
-        db.executemany(
-            "INSERT INTO paradas_std "
-            "(fecha, tardanza_inicio, lavado_desinfeccion, dano_sistema_1, dano_sistema_2, "
-            " fallas_electricas, fallas_sistema, falta_canastillas, parada_alimentacion, "
-            " recepcion_entrega, reunion_magica, total) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "paradas_std",
+        "INSERT INTO paradas_std "
+        "(fecha, tardanza_inicio, lavado_desinfeccion, dano_sistema_1, dano_sistema_2, "
+        " fallas_electricas, fallas_sistema, falta_canastillas, parada_alimentacion, "
+        " recepcion_entrega, reunion_magica, total) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_tiempo_produccion(path: Path) -> int:
@@ -647,14 +659,12 @@ def _import_tiempo_produccion(path: Path) -> int:
             _to_time_str(cells[r][4] if cells.shape[1] > 4 else None),
             _to_time_str(cells[r][5] if cells.shape[1] > 5 else None),
         ))
-    db.execute("TRUNCATE TABLE tiempo_produccion")
-    if rows:
-        db.executemany(
-            "INSERT INTO tiempo_produccion (cliente, canales, canales_promedio, tiempo_promedio, tiempo_estimado) "
-            "VALUES (%s,%s,%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "tiempo_produccion",
+        "INSERT INTO tiempo_produccion (cliente, canales, canales_promedio, tiempo_promedio, tiempo_estimado) "
+        "VALUES (%s,%s,%s,%s,%s)",
+        rows,
+    )
 
 
 def _import_cargos(path: Path) -> int:
@@ -670,19 +680,30 @@ def _import_cargos(path: Path) -> int:
         if numero is None and not nombre:
             continue
         rows.append((numero, nombre, cargo))
-    db.execute("TRUNCATE TABLE cargos")
-    if rows:
-        db.executemany(
-            "INSERT INTO cargos (numero, nombre, cargo) VALUES (%s,%s,%s)",
-            rows,
-        )
-    return len(rows)
+    return _truncate_insert(
+        "cargos",
+        "INSERT INTO cargos (numero, nombre, cargo) VALUES (%s,%s,%s)",
+        rows,
+    )
 
 
-# ---------------- Orquestacion ----------------
+# Un solo registro: etiqueta en resumen -> funcion importadora
+IMPORT_JOBS: tuple[tuple[str, Any], ...] = (
+    ("ORION", _import_orion),
+    ("BASE DATOS", _import_base_datos),
+    ("MERMA FRIO", _import_merma_frio),
+    ("MERMA RESUMEN", _import_merma_resumen),
+    ("PPTO DESP.", _import_ppto_desp),
+    ("TABLERO IND.", _import_tablero_ind),
+    ("REPORTEOPER", _import_reporte_oper),
+    ("PARADASTD", _import_paradas),
+    ("TIEMPO PRODUCCION", _import_tiempo_produccion),
+    ("CARGOS", _import_cargos),
+)
+
 
 def import_all(path: Path | None = None) -> dict[str, Any]:
-    """Importa todas las hojas relevantes y devuelve un resumen."""
+    """Importa todas las hojas de IMPORT_JOBS y devuelve un resumen."""
     p = Path(path) if path else config.EXCEL_PATH
     if not p.exists():
         msg = f"No existe el archivo Excel: {p}"
@@ -691,19 +712,7 @@ def import_all(path: Path | None = None) -> dict[str, Any]:
 
     started = time.perf_counter()
     summary: dict[str, Any] = {"ok": True, "archivo": str(p), "hojas": {}}
-    importers: list[tuple[str, callable]] = [
-        ("ORION", _import_orion),
-        ("BASE DATOS", _import_base_datos),
-        ("MERMA FRIO", _import_merma_frio),
-        ("MERMA RESUMEN", _import_merma_resumen),
-        ("PPTO DESP.", _import_ppto_desp),
-        ("TABLERO IND.", _import_tablero_ind),
-        ("REPORTEOPER", _import_reporte_oper),
-        ("PARADASTD", _import_paradas),
-        ("TIEMPO PRODUCCION", _import_tiempo_produccion),
-        ("CARGOS", _import_cargos),
-    ]
-    for nombre, func in importers:
+    for nombre, func in IMPORT_JOBS:
         try:
             n = func(p)
             summary["hojas"][nombre] = n
@@ -715,3 +724,30 @@ def import_all(path: Path | None = None) -> dict[str, Any]:
 
     summary["duracion_seg"] = round(time.perf_counter() - started, 3)
     return summary
+
+
+def _run_cli() -> int:
+    """Permite importar sin levantar el servidor: python -m services.excel_importer"""
+    import sys
+
+    from database import db
+
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if not Path(config.EXCEL_PATH).exists():
+        log.error("No existe: %s", config.EXCEL_PATH)
+        return 1
+    try:
+        db.init_database()
+        db.ensure_schema()
+    except Exception as exc:  # noqa: BLE001
+        log.error("Base de datos no disponible: %s", exc)
+        return 1
+    summary = import_all()
+    print(summary)
+    return 0 if summary.get("ok") else 1
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(_run_cli())
