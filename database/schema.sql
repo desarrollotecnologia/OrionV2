@@ -181,6 +181,9 @@ CREATE TABLE IF NOT EXISTS paradas_std (
     recepcion_entrega           DOUBLE NULL,
     reunion_magica              DOUBLE NULL,
     total                       DOUBLE NULL,
+    observaciones               VARCHAR(255) NULL,
+    origen                      VARCHAR(20) NOT NULL DEFAULT 'excel',
+    creado_en                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_fecha (fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

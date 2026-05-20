@@ -81,6 +81,12 @@ def _apply_soft_migrations() -> None:
          "ALTER TABLE merma_frio ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'excel'"),
         ("merma_frio", "creado_en",
          "ALTER TABLE merma_frio ADD COLUMN creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+        ("paradas_std", "observaciones",
+         "ALTER TABLE paradas_std ADD COLUMN observaciones VARCHAR(255) NULL"),
+        ("paradas_std", "origen",
+         "ALTER TABLE paradas_std ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'excel'"),
+        ("paradas_std", "creado_en",
+         "ALTER TABLE paradas_std ADD COLUMN creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
     ]
     applied = 0
     for table, column, ddl in migrations:

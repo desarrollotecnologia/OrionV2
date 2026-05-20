@@ -60,6 +60,9 @@
       <a href="{{ url_for('tablero.index') }}" class="nav-link {% if page=='tablero' %}active{% endif %}">
         <span class="dot"></span><span>Tablero indicadores</span>
       </a>
+      <a href="{{ url_for('paradas.index') }}" class="nav-link {% if page=='paradas' %}active{% endif %}">
+        <span class="dot"></span><span>Paradas</span>
+      </a>
 
       <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Captura de datos</p>
       <a href="{{ url_for('captura.base_datos') }}" class="nav-link {% if page=='captura_bd' %}active{% endif %}">
@@ -67,6 +70,9 @@
       </a>
       <a href="{{ url_for('captura.merma_frio') }}" class="nav-link {% if page=='captura_merma' %}active{% endif %}">
         <span class="dot"></span><span>Merma frio</span>
+      </a>
+      <a href="{{ url_for('captura.paradas') }}" class="nav-link {% if page=='captura_paradas' %}active{% endif %}">
+        <span class="dot"></span><span>Paradas</span>
       </a>
     </nav>
 

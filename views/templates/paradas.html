@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Paradas · ORION{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Reporte de paradas</p>
+    <h1 class="text-3xl font-bold mt-1">Dashboard de paradas</h1>
+    <p class="text-slate-400 text-sm mt-1">Analisis completo del tiempo improductivo por categoria, dia y mes.</p>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <a href="{{ url_for('captura.paradas') }}" class="px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">
+      + Registrar parada
+    </a>
+    <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="text-slate-300">Sincronizado:</span>
+      <span id="lastSync" class="text-slate-100 font-medium">--</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 1. KPIs ============ -->
+<div class="section-header">
+  <div class="icon">1</div>
+  <div class="text">
+    <h2>Indicadores clave</h2>
+    <p>Resumen del historial de paradas registradas</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">KPIs</span>
+</div>
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+  <div class="kpi-card">
+    <p class="kpi-label">Total acumulado</p>
+    <p class="kpi-value text-amber-300" id="kpiTotal">--</p>
+    <p class="kpi-extra"><span id="kpiTotalHoras">--</span></p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">Promedio diario</p>
+    <p class="kpi-value text-cyan-300" id="kpiProm">--</p>
+    <p class="kpi-extra">min / dia con paradas</p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">Dias con paradas</p>
+    <p class="kpi-value text-fuchsia-300" id="kpiDias">--</p>
+    <p class="kpi-extra"><span id="kpiUltima">--</span></p>
+  </div>
+  <div class="kpi-card">
+    <p class="kpi-label">Categoria mas critica</p>
+    <p class="kpi-value text-rose-300 text-xl leading-tight" id="kpiTopCat">--</p>
+    <p class="kpi-extra"><span id="kpiTopCatMin">--</span> min totales</p>
+  </div>
+</section>
+
+<!-- ============ 2. Categorias ============ -->
+<div class="section-header">
+  <div class="icon">2</div>
+  <div class="text">
+    <h2>Paradas por categoria</h2>
+    <p>Distribucion del tiempo improductivo por causa</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge" id="rangoBadge">--</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-5 gap-6 mb-2">
+  <div class="card xl:col-span-2">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-3">Distribucion</h3>
+    <div class="h-72"><canvas id="chartCategoria"></canvas></div>
+  </div>
+  <div class="card xl:col-span-3">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-3">Ranking</h3>
+    <div class="overflow-x-auto">
+      <table class="orion-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Categoria</th>
+            <th class="text-right">Minutos</th>
+            <th class="text-right">Horas</th>
+            <th class="text-right">% del total</th>
+          </tr>
+        </thead>
+        <tbody id="tablaRanking"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. Tendencia ============ -->
+<div class="section-header">
+  <div class="icon">3</div>
+  <div class="text">
+    <h2>Tendencia y evolucion</h2>
+    <p>Comportamiento diario y mensual del total de paradas</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Series temporales</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
+  <div class="card">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-1">Tendencia diaria</h3>
+    <p class="text-xs text-slate-500 mb-3">Ultimos 90 dias con datos</p>
+    <div class="h-72"><canvas id="chartTendencia"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-1">Evolucion mensual</h3>
+    <p class="text-xs text-slate-500 mb-3">Ultimos 12 meses</p>
+    <div class="h-72"><canvas id="chartMensual"></canvas></div>
+  </div>
+</section>
+
+<!-- ============ 4. Recientes ============ -->
+<div class="section-header">
+  <div class="icon">4</div>
+  <div class="text">
+    <h2>Registros recientes</h2>
+    <p>Ultimas 20 paradas registradas (Excel + manuales)</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Detalle</span>
+</div>
+<section class="card overflow-hidden mb-2">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Origen</th>
+          <th class="text-right">Tardanza</th>
+          <th class="text-right">Lavado</th>
+          <th class="text-right">Etiquetado</th>
+          <th class="text-right">Pesaje</th>
+          <th class="text-right">Electrico</th>
+          <th class="text-right">Cryovac</th>
+          <th class="text-right">Canastillas</th>
+          <th class="text-right">Alimentacion</th>
+          <th class="text-right">Recepcion</th>
+          <th class="text-right">Reunion</th>
+          <th class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody id="tablaRecientes"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 5. Manuales ============ -->
+<div class="section-header">
+  <div class="icon">5</div>
+  <div class="text">
+    <h2>Capturas manuales</h2>
+    <p>Paradas ingresadas desde el aplicativo (se preservan al re-importar Excel)</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Manuales</span>
+</div>
+<section class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th class="text-right">Total min</th>
+          <th>Top categoria</th>
+          <th>Observaciones</th>
+          <th>Creado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaManuales"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/paradas.js') }}"></script>
+{% endblock %}

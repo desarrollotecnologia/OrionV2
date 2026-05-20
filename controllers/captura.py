@@ -18,3 +18,9 @@ def base_datos():
 @login_required
 def merma_frio():
     return render_template("captura_merma_frio.html", page="captura_merma")
+
+
+@bp.route("/paradas")
+@login_required
+def paradas():
+    return render_template("captura_paradas.html", page="captura_paradas")

@@ -16,6 +16,7 @@ from controllers import (
     tablero_bp,
     mensual_bp,
     captura_bp,
+    paradas_bp,
     api_bp,
 )
 from models import user as user_model
@@ -86,6 +87,7 @@ def create_app() -> tuple[Flask, SocketIO]:
     app.register_blueprint(tablero_bp)
     app.register_blueprint(mensual_bp)
     app.register_blueprint(captura_bp)
+    app.register_blueprint(paradas_bp)
     app.register_blueprint(api_bp)
 
     @app.route("/healthz")

@@ -4,6 +4,7 @@ from .dashboard import bp as dashboard_bp
 from .tablero import bp as tablero_bp
 from .mensual import bp as mensual_bp
 from .captura import bp as captura_bp
+from .paradas import bp as paradas_bp
 from .api import bp as api_bp
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "tablero_bp",
     "mensual_bp",
     "captura_bp",
+    "paradas_bp",
     "api_bp",
 ]

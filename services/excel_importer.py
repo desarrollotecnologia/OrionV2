@@ -631,13 +631,13 @@ def _import_paradas(path: Path) -> int:
             _to_float(cells[r][10] if cells.shape[1] > 10 else None),
             _to_float(cells[r][11] if cells.shape[1] > 11 else None),
         ))
-    return _truncate_insert(
+    return _replace_excel_rows(
         "paradas_std",
         "INSERT INTO paradas_std "
         "(fecha, tardanza_inicio, lavado_desinfeccion, dano_sistema_1, dano_sistema_2, "
         " fallas_electricas, fallas_sistema, falta_canastillas, parada_alimentacion, "
-        " recepcion_entrega, reunion_magica, total) "
-        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        " recepcion_entrega, reunion_magica, total, origen) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'excel')",
         rows,
     )
 

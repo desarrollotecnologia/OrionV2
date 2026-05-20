@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Captura Paradas · ORION{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Captura</p>
+    <h1 class="text-3xl font-bold mt-1">Reporte de paradas · nuevo registro</h1>
+    <p class="text-slate-400 text-sm mt-1">Carga los minutos de parada del dia por categoria. El total y el dashboard se actualizan en vivo.</p>
+  </div>
+  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span class="text-slate-300">Registros manuales:</span>
+    <span id="manualCount" class="text-slate-100 font-medium">--</span>
+  </div>
+</header>
+
+<!-- ============ Formulario ============ -->
+<div class="section-header">
+  <div class="icon">1</div>
+  <div class="text">
+    <h2>Registrar parada del dia</h2>
+    <p>Ingresa los minutos por categoria. Los campos vacios se asumen como cero.</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Formulario</span>
+</div>
+
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
+  <form id="formParadas" class="card xl:col-span-2 space-y-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="lbl">Fecha <span class="text-orion-300">*</span></label>
+        <input type="date" name="fecha" id="f_fecha" required class="inp" />
+        <p class="hint" id="f_diainfo">Se usa la fecha de hoy por defecto</p>
+      </div>
+      <div class="md:col-span-2">
+        <label class="lbl">Observaciones</label>
+        <input type="text" name="observaciones" id="f_observaciones" class="inp"
+               placeholder="Detalle opcional del dia (ej: corte de energia 9am-11am)" maxlength="255" />
+      </div>
+    </div>
+
+    <div>
+      <p class="lbl mb-3">Minutos por categoria</p>
+      <div id="gridCategorias" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-400">Total minutos</p>
+        <p class="text-3xl font-bold text-amber-300" id="totalMinutos">0</p>
+        <p class="text-xs text-slate-500" id="totalHoras">0h 0m</p>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" id="btnLimpiar" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Limpiar</button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold shadow shadow-orion-700/30">
+          Guardar parada
+        </button>
+      </div>
+    </div>
+
+    <div id="formMsg" class="hidden text-sm px-3 py-2 rounded-lg"></div>
+  </form>
+
+  <aside class="card">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-2">Tips rapidos</h3>
+    <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
+      <li>Ingresa solo los minutos de cada parada (numeros enteros o con decimales).</li>
+      <li>El total se calcula automaticamente sumando todas las categorias.</li>
+      <li>Los datos manuales <strong class="text-slate-200">no se borran</strong> al re-importar el Excel.</li>
+      <li>Si no hubo parada en una categoria, deja el campo vacio (= 0).</li>
+    </ul>
+    <a href="{{ url_for('paradas.index') }}" class="mt-4 inline-flex items-center gap-2 text-xs text-orion-300 hover:text-orion-200">
+      Ver dashboard de paradas →
+    </a>
+  </aside>
+</section>
+
+<!-- ============ Recientes manuales ============ -->
+<div class="section-header">
+  <div class="icon">2</div>
+  <div class="text">
+    <h2>Registros manuales recientes</h2>
+    <p>Ultimas paradas ingresadas desde este formulario</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Historial</span>
+</div>
+
+<section class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th class="text-right">Total min</th>
+          <th>Top categoria</th>
+          <th>Observaciones</th>
+          <th class="text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tablaManuales"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/captura_paradas.js') }}"></script>
+{% endblock %}

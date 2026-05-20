@@ -269,3 +269,61 @@ def captura_merma_delete(reg_id: int):
     if n:
         live_bus.broadcast("orion:sync", {"summary": {"ok": True, "fuente": "captura"}})
     return jsonify({"ok": bool(n), "eliminados": n})
+
+
+# -------- Captura: PARADAS --------
+
+@bp.route("/captura/paradas/options")
+@login_required
+def captura_paradas_options():
+    return jsonify({
+        "categorias": [
+            {"key": col, "label": label, "short": short}
+            for col, label, short in paradas_model.CATEGORIAS
+        ],
+    })
+
+
+@bp.route("/captura/paradas", methods=["POST"])
+@login_required
+def captura_paradas_create():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    try:
+        result = paradas_model.insertar_manual(payload)
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    live_bus.broadcast("orion:sync", {"summary": {"ok": True, "fuente": "captura"}})
+    return jsonify({"ok": True, "registro": result})
+
+
+@bp.route("/captura/paradas")
+@login_required
+def captura_paradas_list():
+    return jsonify({
+        "manuales": _serialize_rows(paradas_model.manuales_recientes(50)),
+    })
+
+
+@bp.route("/captura/paradas/<int:reg_id>", methods=["DELETE"])
+@login_required
+def captura_paradas_delete(reg_id: int):
+    n = paradas_model.eliminar_manual(reg_id)
+    if n:
+        live_bus.broadcast("orion:sync", {"summary": {"ok": True, "fuente": "captura"}})
+    return jsonify({"ok": bool(n), "eliminados": n})
+
+
+# -------- Dashboard de paradas (vista dedicada) --------
+
+@bp.route("/paradas-dashboard")
+@login_required
+def paradas_dashboard():
+    return jsonify({
+        "resumen": _serialize({**paradas_model.resumen()}),
+        "por_categoria": _serialize_rows(paradas_model.total_por_categoria()),
+        "tendencia": _serialize_rows(paradas_model.tendencia_diaria(90)),
+        "evolucion_mensual": _serialize_rows(paradas_model.evolucion_mensual(12)),
+        "recientes": _serialize_rows(paradas_model.recientes(20)),
+        "manuales": _serialize_rows(paradas_model.manuales_recientes(10)),
+        "ultima_sync": _serialize(sync_log_model.ultimo()),
+    })
