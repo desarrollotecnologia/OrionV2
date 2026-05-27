@@ -19,7 +19,7 @@ log = logging.getLogger("orion.setup")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Inicializa BD SoftSpoil e importa Excel")
+    parser = argparse.ArgumentParser(description="Inicializa BD SpoilBeeF e importa Excel")
     parser.add_argument(
         "--solo-esquema",
         action="store_true",

@@ -1,5 +1,5 @@
 -- =============================================================================
--- SoftSpoil - Permisos para usuario MySQL "admin" (ejecutar UNA VEZ como root)
+-- SpoilBeeF - Permisos para usuario MySQL "admin" (ejecutar UNA VEZ como root)
 --
 -- En MySQL Workbench o CMD:
 --   mysql -u root -p < database/grant_admin.sql

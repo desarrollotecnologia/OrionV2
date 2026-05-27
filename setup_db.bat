@@ -3,7 +3,7 @@ REM Prepara tablas e importa Excel en el servidor (ejecutar una vez o al actuali
 cd /d "%~dp0"
 
 echo ========================================
-echo   SoftSpoil - Configuracion de base de datos
+echo   SpoilBeeF - Configuracion de base de datos
 echo ========================================
 echo.
 
