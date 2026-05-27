@@ -83,6 +83,14 @@ def create_app() -> tuple[Flask, SocketIO]:
     app.config["JSON_AS_ASCII"] = False
     app.config["TEMPLATES_AUTO_RELOAD"] = config.FLASK_DEBUG
 
+    @app.context_processor
+    def inject_branding():
+        return {
+            "app_name": "SoftSpoil",
+            "site_portal_url": config.SITE_PORTAL_URL,
+            "app_public_url": config.APP_PUBLIC_URL,
+        }
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(tablero_bp)
@@ -140,7 +148,7 @@ def main() -> int:
 
     try:
         log.info(
-            "Servidor BeefFlow listo en http://%s:%s/  (CTRL+C para detener)",
+            "Servidor SoftSpoil listo en http://%s:%s/  (CTRL+C para detener)",
             config.FLASK_HOST,
             config.FLASK_PORT,
         )

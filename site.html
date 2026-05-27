@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoftSpoil · Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, sans-serif;
+      color: #e2e8f0;
+      background: radial-gradient(circle at top right, rgba(6,182,212,0.12), transparent 40%),
+                  linear-gradient(160deg, #020617 0%, #0f172a 55%, #083344 100%);
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    .panel {
+      text-align: center;
+      max-width: 520px;
+    }
+    .logo {
+      width: 72px; height: 72px;
+      margin: 0 auto 1rem;
+      border-radius: 1.25rem;
+      background: linear-gradient(135deg, #22d3ee, #0e7490);
+      display: grid; place-items: center;
+      font-size: 2rem; font-weight: 800; color: #fff;
+      box-shadow: 0 16px 40px -12px rgba(6,182,212,0.45);
+    }
+    h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+    p { color: #94a3b8; margin: 0; line-height: 1.6; }
+
+    .workbeef {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.75rem 1.1rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #06b6d4, #0e7490);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 12px 32px -8px rgba(6,182,212,0.55);
+      border: 1px solid rgba(103,232,249,0.35);
+      transition: transform .15s, box-shadow .15s, filter .15s;
+      z-index: 50;
+    }
+    .workbeef:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+      box-shadow: 0 16px 36px -8px rgba(6,182,212,0.65);
+    }
+    .workbeef svg {
+      width: 1.15rem;
+      height: 1.15rem;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="logo">S</div>
+    <h1>SoftSpoil</h1>
+    <p>Portal del sitio. Usa el boton WorkBeef para volver al tablero operativo.</p>
+  </div>
+
+  <a class="workbeef" href="http://192.168.20.205:8004/" title="Volver a SoftSpoil">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M11.47 3.841a1.25 1.25 0 011.06 0l8.5 4.025A1.25 1.25 0 0121 8.918V18a2.25 2.25 0 01-2.25 2.25h-3.5a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75v4.5a.75.75 0 01-.75.75H5.25A2.25 2.25 0 013 18V8.918a1.25 1.25 0 01.97-1.217l8.5-4.025z"/>
+    </svg>
+    WorkBeef
+  </a>
+</body>
+</html>

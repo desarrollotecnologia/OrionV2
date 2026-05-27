@@ -1,6 +1,6 @@
 @echo off
 
-REM Lanzador BeefFlow - red local 192.168.20.205:8004
+REM Lanzador SoftSpoil - red local 192.168.20.205:8004
 
 cd /d "%~dp0"
 
@@ -98,7 +98,7 @@ echo.
 
 echo ========================================
 
-echo   BeefFlow - http://%FLASK_HOST%:%FLASK_PORT%/
+echo   SoftSpoil - http://%FLASK_HOST%:%FLASK_PORT%/
 
 echo   Acceso en red: http://192.168.20.205:8004/
 
