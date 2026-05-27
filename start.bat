@@ -18,11 +18,7 @@ if not exist .env (
 
   copy /Y .env.example .env >nul
 
-  echo.
-
-  echo IMPORTANTE: Edita .env con DB_USER y DB_PASSWORD antes de continuar.
-
-  echo Ver database\setup_mysql.sql
+  echo Edita .env con tus credenciales MySQL y la ruta del Excel.
 
   notepad .env
 
@@ -48,11 +44,11 @@ if errorlevel 1 (
 
 echo Instalando dependencias Python...
 
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -q
 
 if errorlevel 1 (
 
-  echo Error instalando dependencias. Revisa la conexion a internet o permisos de pip.
+  echo Error instalando dependencias.
 
   pause
 
@@ -74,35 +70,17 @@ if errorlevel 1 (
 
 
 
-set DB_PASS=
+echo Verificando .env...
 
-for /f "usebackq tokens=1,* delims==" %%a in (`findstr /B /I "DB_PASSWORD=" .env`) do set "DB_PASS=%%b"
+python -c "import sys; from config import config; u=(config.DB_USER or '').strip(); p=(config.DB_PASSWORD or '').strip(); print('  DB_USER=' + u); print('  DB_PASSWORD=***' if p else '  DB_PASSWORD=(vacio)'); sys.exit(0 if u and p else 1)"
 
-if "%DB_PASS%"=="" (
-
-  echo.
-
-  echo ========================================
-
-  echo   ERROR DE CONFIGURACION (.env)
-
-  echo ========================================
-
-  echo MySQL rechazo la conexion: falta DB_PASSWORD.
+if errorlevel 1 (
 
   echo.
 
-  echo Edita el archivo .env en esta carpeta y pon:
+  echo ERROR: Revisa DB_USER y DB_PASSWORD en el archivo .env de esta carpeta:
 
-  echo   DB_USER=orion_admin
-
-  echo   DB_PASSWORD=la_contrasena_que_definiste
-
-  echo.
-
-  echo Si aun no creaste el usuario, ejecuta en MySQL:
-
-  echo   database\setup_mysql.sql
+  echo   %CD%\.env
 
   echo.
 
