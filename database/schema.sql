@@ -2,13 +2,14 @@
 -- Se ejecuta automaticamente al iniciar la aplicacion si las tablas no existen.
 
 CREATE TABLE IF NOT EXISTS users (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    username        VARCHAR(64)  NOT NULL UNIQUE,
-    password_hash   VARCHAR(255) NOT NULL,
-    nombre          VARCHAR(150) NULL,
-    rol             VARCHAR(50)  NOT NULL DEFAULT 'admin',
-    activo          TINYINT(1)   NOT NULL DEFAULT 1,
-    creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id                      INT AUTO_INCREMENT PRIMARY KEY,
+    username                VARCHAR(64)  NOT NULL UNIQUE,
+    password_hash           VARCHAR(255) NOT NULL,
+    nombre                  VARCHAR(150) NULL,
+    rol                     VARCHAR(50)  NOT NULL DEFAULT 'user',
+    activo                  TINYINT(1)   NOT NULL DEFAULT 1,
+    must_change_password    TINYINT(1)   NOT NULL DEFAULT 1,
+    creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Indicadores principales (hoja ORION)
@@ -182,9 +183,22 @@ CREATE TABLE IF NOT EXISTS paradas_std (
     reunion_magica              DOUBLE NULL,
     total                       DOUBLE NULL,
     observaciones               VARCHAR(255) NULL,
+    extras                      JSON NULL,
     origen                      VARCHAR(20) NOT NULL DEFAULT 'excel',
     creado_en                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_fecha (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Catalogo de categorias de paradas (sistema + personalizadas)
+CREATE TABLE IF NOT EXISTS paradas_categorias (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    clave       VARCHAR(64) NOT NULL UNIQUE,
+    etiqueta    VARCHAR(200) NOT NULL,
+    columna_bd  VARCHAR(64) NULL,
+    es_sistema  TINYINT(1) NOT NULL DEFAULT 0,
+    activo      TINYINT(1) NOT NULL DEFAULT 1,
+    creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_activo (activo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Hoja TIEMPO PRODUCCION (resumen por cliente)

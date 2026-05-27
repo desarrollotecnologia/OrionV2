@@ -48,14 +48,8 @@
     });
   }
 
-  function fillDatalist(dl, items) {
-    dl.innerHTML = "";
-    items.forEach(v => {
-      const o = document.createElement("option");
-      o.value = v;
-      dl.appendChild(o);
-    });
-  }
+  let clienteAc = null;
+  let cavaAc = null;
 
   function renderAtajos(elId, items, onClick, max = 10) {
     const cont = $(elId);
@@ -77,7 +71,11 @@
       b.type = "button";
       b.className = "chip cliente";
       b.textContent = v;
-      b.addEventListener("click", () => { cliente.value = v; cliente.focus(); });
+      b.addEventListener("click", () => {
+        cliente.value = v;
+        if (clienteAc) clienteAc.hide();
+        cliente.focus();
+      });
       cont.appendChild(b);
     });
   }
@@ -87,10 +85,22 @@
       // Para merma solo bovinos / bufalinos por convencion
       const especiesMerma = (data.especies || []).filter(e => e !== "PORCINOS");
       fillSelect(especie, especiesMerma.length ? especiesMerma : ["BOVINOS", "BUFALINOS"], "Selecciona especie");
-      fillDatalist($("dl_clientes"), data.clientes || []);
-      fillDatalist($("dl_cavas"), data.cavas || []);
-      renderAtajos("atajosCavas", data.cavas || [], v => cava.value = v, 12);
-      renderClientesAside(data.clientes_merma || data.clientes || []);
+      const clientes = data.clientes_merma || data.clientes || [];
+      const cavas = data.cavas || [];
+      if (!clienteAc) {
+        clienteAc = Live.autocomplete(cliente, $("clienteAcList"), {
+          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`
+        });
+      }
+      if (!cavaAc) {
+        cavaAc = Live.autocomplete(cava, $("cavaAcList"), {
+          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q}" como cava nueva.`
+        });
+      }
+      clienteAc.setItems(clientes);
+      cavaAc.setItems(cavas);
+      renderAtajos("atajosCavas", cavas, v => { cava.value = v; if (cavaAc) cavaAc.hide(); }, 12);
+      renderClientesAside(clientes);
     });
   }
 

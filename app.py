@@ -17,6 +17,7 @@ from controllers import (
     mensual_bp,
     captura_bp,
     paradas_bp,
+    usuarios_bp,
     api_bp,
 )
 from models import user as user_model
@@ -41,7 +42,7 @@ def _init_database() -> bool:
         db.init_database()
         db.ensure_schema()
         user_model.ensure_default_admin()
-        log.info("Base de datos lista. Usuario admin asegurado.")
+        log.info("Base de datos lista. Usuario administrador inicial verificado.")
         return True
     except Exception as exc:  # noqa: BLE001
         log.error(
@@ -88,6 +89,7 @@ def create_app() -> tuple[Flask, SocketIO]:
     app.register_blueprint(mensual_bp)
     app.register_blueprint(captura_bp)
     app.register_blueprint(paradas_bp)
+    app.register_blueprint(usuarios_bp)
     app.register_blueprint(api_bp)
 
     @app.route("/healthz")
@@ -138,7 +140,7 @@ def main() -> int:
 
     try:
         log.info(
-            "Servidor ORION listo en http://%s:%s/  (CTRL+C para detener)",
+            "Servidor BeefFlow listo en http://%s:%s/  (CTRL+C para detener)",
             config.FLASK_HOST,
             config.FLASK_PORT,
         )

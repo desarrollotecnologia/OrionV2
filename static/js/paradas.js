@@ -29,13 +29,17 @@
   // ---------- Render KPIs ----------
   function renderKPI(data) {
     const r = data.resumen || {};
+    const anio = data.anio || r.anio || new Date().getFullYear();
+    const dashAnio = document.getElementById('dashAnio');
+    if (dashAnio) dashAnio.textContent = anio;
+
     document.getElementById('kpiTotal').textContent = Live.fmt.num(r.total_general);
     document.getElementById('kpiTotalHoras').textContent = fmtHoras(r.total_general);
     document.getElementById('kpiProm').textContent = Live.fmt.num(r.promedio_diario, 1);
     document.getElementById('kpiDias').textContent = Live.fmt.num(r.dias_con_paradas);
     document.getElementById('kpiUltima').textContent = r.ultima_fecha
       ? `Ultimo registro: ${Live.fmt.date(r.ultima_fecha)}`
-      : 'Sin datos';
+      : `Sin datos en ${anio}`;
     if (r.categoria_top) {
       document.getElementById('kpiTopCat').textContent = r.categoria_top.categoria;
       document.getElementById('kpiTopCatMin').textContent = Live.fmt.num(r.categoria_top.total);
@@ -46,8 +50,8 @@
     const rb = document.getElementById('rangoBadge');
     if (rb) {
       rb.textContent = r.ultima_fecha
-        ? `Hasta ${Live.fmt.date(r.ultima_fecha)}`
-        : 'Sin datos';
+        ? `Año ${anio} · hasta ${Live.fmt.date(r.ultima_fecha)}`
+        : `Año ${anio} · sin datos`;
     }
   }
 

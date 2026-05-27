@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Paradas · ORION{% endblock %}
+{% block title %}Paradas · BeefFlow{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
     <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Reporte de paradas</p>
-    <h1 class="text-3xl font-bold mt-1">Dashboard de paradas</h1>
-    <p class="text-slate-400 text-sm mt-1">Analisis completo del tiempo improductivo por categoria, dia y mes.</p>
+    <h1 class="text-3xl font-bold mt-1">Dashboard de paradas <span id="dashAnio" class="text-orion-300"></span></h1>
+    <p class="text-slate-400 text-sm mt-1">Analisis del tiempo improductivo del año en curso.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
     <a href="{{ url_for('captura.paradas') }}" class="px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">
@@ -24,14 +24,14 @@
   <div class="icon">1</div>
   <div class="text">
     <h2>Indicadores clave</h2>
-    <p>Resumen del historial de paradas registradas</p>
+    <p>Resumen de paradas registradas en el año</p>
   </div>
   <div class="line"></div>
   <span class="badge">KPIs</span>
 </div>
 <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
   <div class="kpi-card">
-    <p class="kpi-label">Total acumulado</p>
+    <p class="kpi-label">Total del año</p>
     <p class="kpi-value text-amber-300" id="kpiTotal">--</p>
     <p class="kpi-extra"><span id="kpiTotalHoras">--</span></p>
   </div>
@@ -99,12 +99,12 @@
 <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2">
   <div class="card">
     <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-1">Tendencia diaria</h3>
-    <p class="text-xs text-slate-500 mb-3">Ultimos 90 dias con datos</p>
+    <p class="text-xs text-slate-500 mb-3">Todos los dias con datos del año</p>
     <div class="h-72"><canvas id="chartTendencia"></canvas></div>
   </div>
   <div class="card">
     <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-1">Evolucion mensual</h3>
-    <p class="text-xs text-slate-500 mb-3">Ultimos 12 meses</p>
+    <p class="text-xs text-slate-500 mb-3">Meses del año en curso</p>
     <div class="h-72"><canvas id="chartMensual"></canvas></div>
   </div>
 </section>
@@ -114,7 +114,7 @@
   <div class="icon">4</div>
   <div class="text">
     <h2>Registros recientes</h2>
-    <p>Ultimas 20 paradas registradas (Excel + manuales)</p>
+    <p>Ultimas 20 paradas del año en curso (Excel + manuales)</p>
   </div>
   <div class="line"></div>
   <span class="badge">Detalle</span>

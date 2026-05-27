@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Cambiar contraseña · BeefFlow{% endblock %}
+{% block content %}
+<header class="mb-8">
+  <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Seguridad</p>
+  <h1 class="text-3xl font-bold mt-1">Cambiar contraseña</h1>
+  {% if obligatorio %}
+  <p class="text-amber-300 text-sm mt-2">Es tu primer ingreso. Debes definir una contraseña personal antes de usar el sistema.</p>
+  {% else %}
+  <p class="text-slate-400 text-sm mt-1">Actualiza tu contraseña de acceso.</p>
+  {% endif %}
+</header>
+
+<section class="max-w-lg">
+  <form method="post" class="card space-y-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in messages %}
+      <div class="text-sm px-3 py-2 rounded-lg {% if cat=='error' %}bg-rose-900/40 border border-rose-700 text-rose-200{% elif cat=='ok' %}bg-emerald-900/40 border border-emerald-700 text-emerald-200{% else %}bg-slate-800 border border-slate-700 text-slate-200{% endif %}">{{ m }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div>
+      <label class="lbl">Contraseña actual</label>
+      <input type="password" name="password_actual" required class="inp" autocomplete="current-password" />
+    </div>
+    <div>
+      <label class="lbl">Nueva contraseña</label>
+      <input type="password" name="password_nueva" required minlength="8" class="inp" autocomplete="new-password" />
+      <p class="hint">Minimo 8 caracteres</p>
+    </div>
+    <div>
+      <label class="lbl">Confirmar nueva contraseña</label>
+      <input type="password" name="password_confirm" required minlength="8" class="inp" autocomplete="new-password" />
+    </div>
+    <button type="submit" class="w-full py-2.5 bg-orion-600 hover:bg-orion-500 rounded-lg font-semibold">
+      Guardar contraseña
+    </button>
+  </form>
+</section>
+{% endblock %}

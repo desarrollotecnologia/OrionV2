@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Captura Paradas · ORION{% endblock %}
+{% block title %}Captura Paradas · BeefFlow{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
@@ -19,7 +19,7 @@
   <div class="icon">1</div>
   <div class="text">
     <h2>Registrar parada del dia</h2>
-    <p>Ingresa los minutos por categoria. Los campos vacios se asumen como cero.</p>
+    <p>Elige la categoria, ingresa minutos y agrega filas segun necesites.</p>
   </div>
   <div class="line"></div>
   <span class="badge">Formulario</span>
@@ -41,8 +41,36 @@
     </div>
 
     <div>
-      <p class="lbl mb-3">Minutos por categoria</p>
-      <div id="gridCategorias" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <p class="lbl mb-0">Paradas del dia</p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btnNuevaCategoria" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs border border-slate-700">
+            + Nueva categoria
+          </button>
+          <button type="button" id="btnAgregarLinea" class="px-3 py-1.5 rounded-lg bg-orion-700/40 hover:bg-orion-600/40 text-xs border border-orion-700 text-orion-100">
+            + Agregar parada
+          </button>
+        </div>
+      </div>
+      <div id="lineasParadas" class="space-y-2"></div>
+      <p id="lineasEmpty" class="text-xs text-slate-500 mt-2">Agrega una fila, elige la categoria e ingresa los minutos.</p>
+    </div>
+
+    <!-- Modal nueva categoria -->
+    <div id="modalCategoria" class="hidden fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4">
+      <div class="card w-full max-w-md space-y-4">
+        <h3 class="text-lg font-bold">Nueva categoria</h3>
+        <p class="text-xs text-slate-400">Quedara disponible en el selector para futuros registros.</p>
+        <div>
+          <label class="lbl">Nombre de la categoria</label>
+          <input type="text" id="nuevaCatNombre" class="inp" maxlength="200"
+                 placeholder="Ej: Falta de personal, Mantenimiento preventivo..." />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="btnCancelarCat" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Cancelar</button>
+          <button type="button" id="btnGuardarCat" class="px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">Guardar categoria</button>
+        </div>
+      </div>
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
@@ -65,10 +93,10 @@
   <aside class="card">
     <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300 mb-2">Tips rapidos</h3>
     <ul class="text-xs text-slate-400 space-y-2 list-disc list-inside">
-      <li>Ingresa solo los minutos de cada parada (numeros enteros o con decimales).</li>
-      <li>El total se calcula automaticamente sumando todas las categorias.</li>
+      <li>Usa <strong class="text-slate-200">+ Agregar parada</strong> para cada categoria del dia.</li>
+      <li>Elige la categoria en el selector e ingresa los minutos.</li>
+      <li>Si falta una categoria, creala con <strong class="text-slate-200">+ Nueva categoria</strong>.</li>
       <li>Los datos manuales <strong class="text-slate-200">no se borran</strong> al re-importar el Excel.</li>
-      <li>Si no hubo parada en una categoria, deja el campo vacio (= 0).</li>
     </ul>
     <a href="{{ url_for('paradas.index') }}" class="mt-4 inline-flex items-center gap-2 text-xs text-orion-300 hover:text-orion-200">
       Ver dashboard de paradas →
@@ -94,7 +122,7 @@
         <tr>
           <th>Fecha</th>
           <th class="text-right">Total min</th>
-          <th>Top categoria</th>
+          <th>Detalle</th>
           <th>Observaciones</th>
           <th class="text-right">Acciones</th>
         </tr>

@@ -26,7 +26,7 @@
     if (!fecha.value) { mesAnioHint.textContent = ""; return; }
     const d = new Date(fecha.value);
     if (Number.isNaN(d.getTime())) return;
-    mesAnioHint.textContent = `Mes ${d.getMonth() + 1} · Ano ${d.getFullYear()} (${Live.MES_NOMBRE[d.getMonth() + 1]})`;
+    mesAnioHint.textContent = `Mes ${d.getMonth() + 1} · Año ${d.getFullYear()} (${Live.MES_NOMBRE[d.getMonth() + 1]})`;
   }
   fecha.addEventListener("change", actualizarMesAnioHint);
   actualizarMesAnioHint();
@@ -46,14 +46,8 @@
     });
   }
 
-  function fillDatalist(dl, items) {
-    dl.innerHTML = "";
-    items.forEach(v => {
-      const o = document.createElement("option");
-      o.value = v;
-      dl.appendChild(o);
-    });
-  }
+  // ----- Autocomplete cliente -----
+  let clienteAc = null;
 
   function renderAtajos(elId, items, onClick, max = 6) {
     const cont = $(elId);
@@ -76,7 +70,11 @@
       b.type = "button";
       b.className = "chip cliente";
       b.textContent = v;
-      b.addEventListener("click", () => { cliente.value = v; cliente.focus(); });
+      b.addEventListener("click", () => {
+        cliente.value = v;
+        if (clienteAc) clienteAc.hide();
+        cliente.focus();
+      });
       cont.appendChild(b);
     });
   }
@@ -88,9 +86,15 @@
       fillSelect(especie, data.especies, "Selecciona especie");
       fillSelect(limpieza, data.limpiezas, "Selecciona limpieza");
       fillSelect(proceso, data.procesos, "Selecciona proceso");
-      fillDatalist($("dl_clientes"), data.clientes);
+      const clientes = data.clientes_base_datos || data.clientes || [];
+      if (!clienteAc) {
+        clienteAc = Live.autocomplete(cliente, $("clienteAcList"), {
+          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`
+        });
+      }
+      clienteAc.setItems(clientes);
       renderAtajos("atajosProcesos", data.procesos, v => proceso.value = v, 8);
-      renderClientesAside(data.clientes_base_datos || data.clientes);
+      renderClientesAside(clientes);
     });
   }
 

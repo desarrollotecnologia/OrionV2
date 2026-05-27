@@ -42,8 +42,9 @@ class Config:
     WATCHER_DEBOUNCE_SEC = float(os.getenv("WATCHER_DEBOUNCE_SEC", "2.0"))
 
     # Auth
-    DEFAULT_ADMIN_USER = os.getenv("DEFAULT_ADMIN_USER", "admin")
-    DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin")
+    DEFAULT_ADMIN_USER = os.getenv("DEFAULT_ADMIN_USER", "coordinacion.desposte@colbeef.com")
+    DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "Colbeef2026*")
+    DEFAULT_RESET_PASSWORD = os.getenv("DEFAULT_RESET_PASSWORD", "Colbeef2026*")
 
 
 config = Config()

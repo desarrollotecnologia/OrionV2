@@ -276,11 +276,36 @@ def captura_merma_delete(reg_id: int):
 @bp.route("/captura/paradas/options")
 @login_required
 def captura_paradas_options():
+    cats = paradas_model.listar_categorias()
     return jsonify({
         "categorias": [
-            {"key": col, "label": label, "short": short}
-            for col, label, short in paradas_model.CATEGORIAS
+            {
+                "key": c["clave"],
+                "label": c["etiqueta"],
+                "short": c["clave"][:12],
+                "es_sistema": bool(c.get("es_sistema")),
+            }
+            for c in cats
         ],
+    })
+
+
+@bp.route("/captura/paradas/categorias", methods=["POST"])
+@login_required
+def captura_paradas_categoria_create():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    etiqueta = (payload.get("etiqueta") or payload.get("label") or "").strip()
+    try:
+        cat = paradas_model.agregar_categoria(etiqueta)
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({
+        "ok": True,
+        "categoria": {
+            "key": cat["clave"],
+            "label": cat["etiqueta"],
+            "es_sistema": bool(cat.get("es_sistema")),
+        },
     })
 
 
@@ -318,12 +343,14 @@ def captura_paradas_delete(reg_id: int):
 @bp.route("/paradas-dashboard")
 @login_required
 def paradas_dashboard():
+    anio = date.today().year
     return jsonify({
-        "resumen": _serialize({**paradas_model.resumen()}),
-        "por_categoria": _serialize_rows(paradas_model.total_por_categoria()),
-        "tendencia": _serialize_rows(paradas_model.tendencia_diaria(90)),
-        "evolucion_mensual": _serialize_rows(paradas_model.evolucion_mensual(12)),
-        "recientes": _serialize_rows(paradas_model.recientes(20)),
-        "manuales": _serialize_rows(paradas_model.manuales_recientes(10)),
+        "anio": anio,
+        "resumen": _serialize({**paradas_model.resumen(anio=anio)}),
+        "por_categoria": _serialize_rows(paradas_model.total_por_categoria(anio=anio)),
+        "tendencia": _serialize_rows(paradas_model.tendencia_diaria(anio=anio)),
+        "evolucion_mensual": _serialize_rows(paradas_model.evolucion_mensual(anio=anio)),
+        "recientes": _serialize_rows(paradas_model.recientes(20, anio=anio)),
+        "manuales": _serialize_rows(paradas_model.manuales_recientes(10, anio=anio)),
         "ultima_sync": _serialize(sync_log_model.ultimo()),
     })

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Usuarios · BeefFlow{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Administracion</p>
+    <h1 class="text-3xl font-bold mt-1">Usuarios</h1>
+    <p class="text-slate-400 text-sm mt-1">Crea cuentas, restablece contraseñas o elimina usuarios. La contraseña estandar es <span class="text-orion-300 font-mono">{{ reset_password }}</span>.</p>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, m in messages %}
+  <div class="mb-4 text-sm px-3 py-2 rounded-lg {% if cat=='error' %}bg-rose-900/40 border border-rose-700 text-rose-200{% elif cat=='ok' %}bg-emerald-900/40 border border-emerald-700 text-emerald-200{% else %}bg-slate-800 border border-slate-700 text-slate-200{% endif %}">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div class="section-header">
+  <div class="icon">1</div>
+  <div class="text">
+    <h2>Crear usuario</h2>
+    <p>Se asigna la contraseña estandar y debera cambiarla en el primer ingreso</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Nuevo</span>
+</div>
+
+<section class="card mb-6">
+  <form method="post" action="{{ url_for('usuarios.crear') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <div class="md:col-span-2">
+      <label class="lbl">Correo / usuario <span class="text-orion-300">*</span></label>
+      <input type="email" name="username" required class="inp" placeholder="nombre@colbeef.com" />
+    </div>
+    <div>
+      <label class="lbl">Nombre</label>
+      <input type="text" name="nombre" class="inp" placeholder="Nombre completo" maxlength="150" />
+    </div>
+    <div>
+      <label class="lbl">Rol</label>
+      <select name="rol" class="inp">
+        <option value="user">Usuario</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="md:col-span-4">
+      <button type="submit" class="px-5 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">
+        Crear usuario
+      </button>
+    </div>
+  </form>
+</section>
+
+<div class="section-header">
+  <div class="icon">2</div>
+  <div class="text">
+    <h2>Cuentas registradas</h2>
+    <p>Listado de usuarios activos e inactivos</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Listado</span>
+</div>
+
+<section class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Cambio pendiente</th>
+          <th>Creado</th>
+          <th class="text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td class="font-mono text-sm">{{ u.username }}</td>
+          <td>{{ u.nombre or '--' }}</td>
+          <td>
+            <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded {% if u.rol=='admin' %}bg-orion-900/50 border border-orion-700 text-orion-200{% else %}bg-slate-800 border border-slate-700 text-slate-300{% endif %}">
+              {{ u.rol }}
+            </span>
+          </td>
+          <td>{{ 'Activo' if u.activo else 'Inactivo' }}</td>
+          <td>{{ 'Si' if u.must_change_password else 'No' }}</td>
+          <td class="text-xs text-slate-400">{{ u.creado_en }}</td>
+          <td class="text-right">
+            {% if u.id != session.user_id %}
+            <div class="flex flex-wrap justify-end gap-1.5">
+              <form method="post" action="{{ url_for('usuarios.restablecer', user_id=u.id) }}" class="inline"
+                    onsubmit="return confirm('Restablecer contraseña de {{ u.username }} a {{ reset_password }}?');">
+                <button type="submit" class="px-2 py-1 text-xs rounded bg-amber-900/40 border border-amber-700 text-amber-200 hover:bg-amber-900/60">
+                  Restablecer
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('usuarios.eliminar', user_id=u.id) }}" class="inline"
+                    onsubmit="return confirm('¿Eliminar permanentemente a {{ u.username }}? Esta accion no se puede deshacer.');">
+                <button type="submit" class="btn-danger">Eliminar</button>
+              </form>
+            </div>
+            {% else %}
+            <span class="text-xs text-slate-500">Tu cuenta</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-slate-500 py-4">Sin usuarios</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

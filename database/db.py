@@ -87,6 +87,10 @@ def _apply_soft_migrations() -> None:
          "ALTER TABLE paradas_std ADD COLUMN origen VARCHAR(20) NOT NULL DEFAULT 'excel'"),
         ("paradas_std", "creado_en",
          "ALTER TABLE paradas_std ADD COLUMN creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+        ("paradas_std", "extras",
+         "ALTER TABLE paradas_std ADD COLUMN extras JSON NULL"),
+        ("users", "must_change_password",
+         "ALTER TABLE users ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 1"),
     ]
     applied = 0
     for table, column, ddl in migrations:

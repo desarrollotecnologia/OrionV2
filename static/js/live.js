@@ -105,4 +105,124 @@
   };
 
   Live.fetchJSON = (url) => fetch(url, { credentials: 'same-origin' }).then(r => r.json());
+
+  // ---------- Autocomplete reutilizable ----------
+  Live.autocomplete = function (inputEl, listEl, opts) {
+    if (!inputEl || !listEl) return { setItems: () => {}, hide: () => {}, refresh: () => {} };
+
+    opts = opts || {};
+    const minChars = opts.minChars != null ? opts.minChars : 1;
+    const maxItems = opts.maxItems != null ? opts.maxItems : 12;
+    let items = [];
+    let filtered = [];
+    let acIndex = -1;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function highlightMatch(text, query) {
+      const safeText = escapeHtml(text);
+      if (!query) return safeText;
+      const i = text.toLowerCase().indexOf(query.toLowerCase());
+      if (i < 0) return safeText;
+      const q = escapeHtml(text.slice(i, i + query.length));
+      return `${escapeHtml(text.slice(0, i))}<mark>${q}</mark>${escapeHtml(text.slice(i + query.length))}`;
+    }
+
+    function hide() {
+      listEl.classList.add('hidden');
+      listEl.innerHTML = '';
+      acIndex = -1;
+      filtered = [];
+    }
+
+    function select(val) {
+      inputEl.value = val;
+      hide();
+      if (opts.onSelect) opts.onSelect(val);
+    }
+
+    function render(query) {
+      const q = (query || '').trim();
+      acIndex = -1;
+      if (q.length < minChars) {
+        hide();
+        return;
+      }
+      const needle = q.toLowerCase();
+      filtered = items.filter(c => c.toLowerCase().includes(needle)).slice(0, maxItems);
+
+      if (!filtered.length) {
+        listEl.innerHTML = '';
+        const empty = document.createElement('div');
+        empty.className = 'ac-empty';
+        empty.textContent = opts.emptyMsg
+          ? opts.emptyMsg(q)
+          : `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como valor nuevo.`;
+        listEl.appendChild(empty);
+        listEl.classList.remove('hidden');
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((c, i) =>
+        `<button type="button" class="ac-item" data-idx="${i}">${highlightMatch(c, q)}</button>`
+      ).join('');
+      listEl.classList.remove('hidden');
+      listEl.querySelectorAll('.ac-item').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const idx = parseInt(btn.getAttribute('data-idx'), 10);
+          if (!Number.isNaN(idx) && filtered[idx] != null) select(filtered[idx]);
+        });
+      });
+    }
+
+    inputEl.addEventListener('input', () => render(inputEl.value));
+    inputEl.addEventListener('focus', () => {
+      if (inputEl.value.trim().length >= minChars) render(inputEl.value);
+    });
+    inputEl.addEventListener('blur', () => setTimeout(hide, 150));
+    inputEl.addEventListener('keydown', (e) => {
+      const btns = listEl.querySelectorAll('.ac-item');
+      if (!btns.length || listEl.classList.contains('hidden')) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        acIndex = Math.min(acIndex + 1, btns.length - 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        acIndex = Math.max(acIndex - 1, 0);
+      } else if (e.key === 'Enter' && acIndex >= 0) {
+        e.preventDefault();
+        select(filtered[acIndex]);
+        return;
+      } else if (e.key === 'Escape') {
+        hide();
+        return;
+      } else return;
+      btns.forEach((el, i) => el.classList.toggle('active', i === acIndex));
+      if (acIndex >= 0) btns[acIndex].scrollIntoView({ block: 'nearest' });
+    });
+
+    const wrap = inputEl.closest('.ac-wrap');
+    if (wrap) {
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) hide();
+      });
+    }
+
+    return {
+      setItems(newItems) {
+        items = newItems || [];
+      },
+      hide,
+      refresh() {
+        render(inputEl.value);
+      }
+    };
+  };
 })();

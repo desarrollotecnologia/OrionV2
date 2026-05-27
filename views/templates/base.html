@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}ORION{% endblock %}</title>
+  <title>{% block title %}BeefFlow{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2306b6d4'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%230f172a'/%3E%3C/svg%3E" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -30,7 +30,7 @@
     }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/orion.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orion.css') }}?v=2" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   {% block head_extra %}{% endblock %}
@@ -41,11 +41,11 @@
   <aside class="w-64 bg-slate-900/80 border-r border-slate-800 flex flex-col">
     <div class="p-5 border-b border-slate-800 flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orion-400 to-orion-700 grid place-items-center shadow-lg shadow-orion-700/30">
-        <span class="text-white font-bold">O</span>
+        <span class="text-white font-bold">B</span>
       </div>
       <div>
-        <p class="text-lg font-bold tracking-tight">ORION</p>
-        <p class="text-xs text-slate-400">Tablero alfa</p>
+        <p class="text-lg font-bold tracking-tight">BeefFlow</p>
+        <p class="text-xs text-slate-400">Tablero operativo</p>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
 
       <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Captura de datos</p>
       <a href="{{ url_for('captura.base_datos') }}" class="nav-link {% if page=='captura_bd' %}active{% endif %}">
-        <span class="dot"></span><span>Base de datos</span>
+        <span class="dot"></span><span>Proceso productivo</span>
       </a>
       <a href="{{ url_for('captura.merma_frio') }}" class="nav-link {% if page=='captura_merma' %}active{% endif %}">
         <span class="dot"></span><span>Merma frio</span>
@@ -74,6 +74,13 @@
       <a href="{{ url_for('captura.paradas') }}" class="nav-link {% if page=='captura_paradas' %}active{% endif %}">
         <span class="dot"></span><span>Paradas</span>
       </a>
+
+      {% if session.user_role == 'admin' %}
+      <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Administracion</p>
+      <a href="{{ url_for('usuarios.index') }}" class="nav-link {% if page=='usuarios' %}active{% endif %}">
+        <span class="dot"></span><span>Usuarios</span>
+      </a>
+      {% endif %}
     </nav>
 
     <div class="p-4 border-t border-slate-800 space-y-3">
@@ -87,6 +94,7 @@
         <span class="text-slate-200 font-medium truncate block">{{ session.user_name }}</span>
       </div>
       <a href="{{ url_for('auth.logout') }}" class="text-xs text-slate-300 hover:text-white underline">Cerrar sesion</a>
+      <a href="{{ url_for('auth.cambiar_contrasena') }}" class="text-xs text-slate-400 hover:text-white underline block mt-1">Cambiar contraseña</a>
     </div>
   </aside>
 
@@ -99,7 +107,7 @@
   {% block fullbody %}{% endblock %}
 {% endif %}
 
-<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+<script src="{{ url_for('static', filename='js/live.js') }}?v=2"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

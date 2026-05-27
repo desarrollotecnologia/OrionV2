@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Captura MERMA FRIO · ORION{% endblock %}
+{% block title %}Captura MERMA FRIO · BeefFlow{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
@@ -15,7 +15,7 @@
 </header>
 
 <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-  <form id="formMerma" class="card xl:col-span-2 space-y-5">
+  <form id="formMerma" class="card card-form xl:col-span-2 space-y-5">
     <h2 class="text-lg font-bold mb-1">Datos del lote</h2>
     <p class="text-xs text-slate-400">Los campos con <span class="text-orion-300">*</span> son obligatorios.</p>
 
@@ -35,11 +35,12 @@
       </div>
     </div>
 
-    <div>
+    <div class="ac-wrap" id="clienteAcWrap">
       <label class="lbl">Cliente <span class="text-orion-300">*</span></label>
-      <input type="text" name="cliente" id="f_cliente" list="dl_clientes" required autocomplete="off"
-             placeholder="Empieza a escribir o selecciona un cliente..." class="inp" />
-      <datalist id="dl_clientes"></datalist>
+      <input type="text" name="cliente" id="f_cliente" required autocomplete="off"
+             placeholder="Escribe para buscar cliente..." class="inp" />
+      <div id="clienteAcList" class="ac-list hidden" role="listbox"></div>
+      <p class="hint">Escribe para buscar. Si es nuevo, escribelo completo y guarda.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -73,10 +74,10 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
+      <div class="ac-wrap" id="cavaAcWrap">
         <label class="lbl">Cava</label>
-        <input type="text" name="cava" id="f_cava" list="dl_cavas" placeholder="Ej. 7" class="inp" />
-        <datalist id="dl_cavas"></datalist>
+        <input type="text" name="cava" id="f_cava" autocomplete="off" placeholder="Escribe para buscar cava..." class="inp" />
+        <div id="cavaAcList" class="ac-list hidden" role="listbox"></div>
       </div>
       <div>
         <label class="lbl">Observaciones</label>
@@ -135,5 +136,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}"></script>
+<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}?v=2"></script>
 {% endblock %}

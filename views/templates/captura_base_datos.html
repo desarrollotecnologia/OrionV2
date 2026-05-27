@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Captura BASE DATOS · ORION{% endblock %}
+{% block title %}Proceso productivo · BeefFlow{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
     <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Captura</p>
-    <h1 class="text-3xl font-bold mt-1">Base de datos · nuevo registro</h1>
-    <p class="text-slate-400 text-sm mt-1">Alimenta directamente la tabla de registros operativos. Los KPIs y graficas se actualizaran en vivo.</p>
+    <h1 class="text-3xl font-bold mt-1">Proceso productivo · nuevo registro</h1>
+    <p class="text-slate-400 text-sm mt-1">Registra la operacion del dia: cliente, especie, proceso, canales, tiempos y velocidades.</p>
   </div>
   <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -15,15 +15,15 @@
 </header>
 
 <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-  <form id="formBaseDatos" class="card xl:col-span-2 space-y-5">
+  <form id="formBaseDatos" class="card card-form xl:col-span-2 space-y-5">
     <h2 class="text-lg font-bold mb-1">Datos del proceso</h2>
-    <p class="text-xs text-slate-400">Los campos con <span class="text-orion-300">*</span> son obligatorios. Mes, ano, tiempo total y velocidades se calculan automaticamente.</p>
+    <p class="text-xs text-slate-400">Los campos con <span class="text-orion-300">*</span> son obligatorios. Mes, año, tiempo total y velocidades se calculan automaticamente.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="lbl">Fecha <span class="text-orion-300">*</span></label>
         <input type="date" name="fecha" id="f_fecha" required class="inp" />
-        <p class="hint" id="f_mesanio">Mes / Ano se completa solo</p>
+        <p class="hint" id="f_mesanio">Mes / Año se completa solo</p>
       </div>
       <div>
         <label class="lbl">Especie <span class="text-orion-300">*</span></label>
@@ -35,12 +35,12 @@
       </div>
     </div>
 
-    <div>
+    <div class="ac-wrap" id="clienteAcWrap">
       <label class="lbl">Cliente <span class="text-orion-300">*</span></label>
-      <input type="text" name="cliente" id="f_cliente" list="dl_clientes" required autocomplete="off"
-             placeholder="Empieza a escribir o selecciona un cliente..." class="inp" />
-      <datalist id="dl_clientes"></datalist>
-      <p class="hint" id="f_cliente_hint">Tip: si el cliente es nuevo, escribelo y se guardara igual.</p>
+      <input type="text" name="cliente" id="f_cliente" required autocomplete="off"
+             placeholder="Escribe para buscar cliente..." class="inp" />
+      <div id="clienteAcList" class="ac-list hidden" role="listbox"></div>
+      <p class="hint" id="f_cliente_hint">Escribe para buscar. Si es nuevo, escribelo completo y guarda.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,5 +139,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=2"></script>
 {% endblock %}
