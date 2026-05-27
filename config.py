@@ -36,6 +36,8 @@ class Config:
     EXCEL_PATH = Path(
         os.getenv("EXCEL_PATH", str(BASE_DIR / "ORION.xlsx"))
     )
+    # Si False (default), al arrancar usa MySQL y no reimporta el Excel si ya hay datos
+    IMPORT_ON_START = _bool(os.getenv("IMPORT_ON_START"), False)
 
     # Watcher
     WATCHER_ENABLED = _bool(os.getenv("WATCHER_ENABLED"), True)

@@ -53,15 +53,39 @@ def _init_database() -> bool:
         return False
 
 
+def _database_has_data() -> bool:
+    """True si MySQL ya tiene filas importadas (no hace falta volver a cargar Excel)."""
+    try:
+        row = db.fetch_one(
+            "SELECT ("
+            "(SELECT COUNT(*) FROM base_datos) + "
+            "(SELECT COUNT(*) FROM indicadores_orion) + "
+            "(SELECT COUNT(*) FROM merma_frio)"
+            ") AS total"
+        )
+        return bool(row and int(row["total"]) > 0)
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _initial_import() -> None:
-    if not config.EXCEL_PATH.exists():
-        log.warning(
-            "No se encontro el Excel ORION en %s. "
-            "Ajusta EXCEL_PATH en .env o copia el archivo.",
-            config.EXCEL_PATH,
+    if _database_has_data() and not config.IMPORT_ON_START:
+        log.info(
+            "MySQL ya tiene datos. Arranque rapido: la app lee desde la base de datos. "
+            "Usa 'Sincronizar Excel' o setup_db.bat para actualizar desde el archivo."
         )
         return
-    log.info("Importacion inicial del Excel...")
+
+    if not config.EXCEL_PATH.exists():
+        if not _database_has_data():
+            log.warning(
+                "Base de datos vacia y no se encontro el Excel en %s. "
+                "Ejecuta setup_db.bat o ajusta EXCEL_PATH en .env.",
+                config.EXCEL_PATH,
+            )
+        return
+
+    log.info("Importando Excel a MySQL...")
     summary = import_all()
     estado = "ok" if summary.get("ok") else "warn"
     sync_log_model.add(
