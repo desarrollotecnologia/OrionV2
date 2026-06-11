@@ -70,12 +70,14 @@
         <input type="time" id="igHoraInicio" class="inp !py-1.5" value="09:00" />
       </label>
       <label class="info-row">
-        <span>Tiempo descanso</span>
-        <input type="time" id="igDescanso" class="inp !py-1.5" value="01:00" />
+        <span>Tiempo descanso<br><small class="text-[#8a9690] font-normal">duracion h:mm</small></span>
+        <input type="text" id="igDescanso" class="inp !py-1.5 text-right" inputmode="numeric"
+               placeholder="1:00" value="1:00" />
       </label>
       <label class="info-row">
-        <span>Parada reuniones</span>
-        <input type="time" id="igParada" class="inp !py-1.5" value="00:00" />
+        <span>Parada reuniones<br><small class="text-[#8a9690] font-normal">duracion h:mm</small></span>
+        <input type="text" id="igParada" class="inp !py-1.5 text-right" inputmode="numeric"
+               placeholder="0:30" value="0:00" />
       </label>
       <div class="info-row info-row-calc">
         <span>Duracion del proceso</span>
@@ -135,7 +137,7 @@
   <div class="flex items-center justify-between mb-3">
     <div>
       <h2 class="proy-title">Historico de proyecciones</h2>
-      <p class="hint mb-0">Click en una fila para cargarla en la calculadora.</p>
+      <p class="hint mb-0">Click en una fila para ver todo el detalle.</p>
     </div>
     <span class="text-xs text-[#8a9690]">Registros: <span id="histCount">--</span></span>
   </div>
@@ -159,9 +161,27 @@
   </div>
 </section>
 
+<!-- ===== MODAL DETALLE ===== -->
+<div id="proyModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <p class="page-eyebrow" id="mFecha">--</p>
+        <h3 class="proy-title" id="mTitulo">Proyeccion</h3>
+      </div>
+      <button type="button" id="mClose" class="modal-x" title="Cerrar">&times;</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-foot">
+      <button type="button" id="mCargar" class="px-5 py-2 text-sm">Cargar en calculadora</button>
+      <button type="button" id="mCerrar" class="btn-secondary px-4 py-2 text-sm">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <datalist id="clientesList"></datalist>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=4"></script>
 {% endblock %}

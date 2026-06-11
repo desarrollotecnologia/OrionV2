@@ -9,9 +9,17 @@
   // ---------- Helpers de tiempo ----------
   function hhmmToMin(s) {
     if (!s) return 0;
-    const p = String(s).split(":").map(n => parseInt(n, 10));
-    if (p.some(Number.isNaN)) return 0;
-    return (p[0] || 0) * 60 + (p[1] || 0);
+    const txt = String(s).trim().replace(",", ".");
+    if (!txt) return 0;
+    if (txt.includes(":")) {
+      const p = txt.split(":");
+      const h = parseInt(p[0], 10) || 0;
+      const m = parseInt(p[1], 10) || 0;
+      return h * 60 + m;
+    }
+    // Sin ":" -> se interpreta como horas (admite decimales, ej. 1.5 = 1:30)
+    const horas = parseFloat(txt);
+    return isFinite(horas) ? Math.round(horas * 60) : 0;
   }
   function minToHM(min) {
     if (min == null || !isFinite(min) || min < 0) return "0:00";
@@ -304,7 +312,7 @@
       tb.querySelectorAll(".hist-row").forEach(tr => {
         tr.addEventListener("click", (e) => {
           if (e.target.classList.contains("hist-del")) return;
-          cargarProyeccion(tr.getAttribute("data-id"));
+          abrirDetalle(tr.getAttribute("data-id"));
         });
       });
       tb.querySelectorAll(".hist-del").forEach(btn => {
@@ -314,6 +322,81 @@
         });
       });
     }).catch(() => {});
+  }
+
+  // ---------- Modal de detalle ----------
+  let modalId = null;
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function abrirDetalle(id) {
+    Live.fetchJSON(`/api/proyeccion/${id}`).then(data => {
+      if (!data.ok) { Live.toast("No se encontro", "error"); return; }
+      const p = data.proyeccion;
+      modalId = id;
+      $("mFecha").textContent = `${Live.fmt.date(p.fecha)} · ${p.creado_por || "Sin autor"}`;
+      $("mTitulo").textContent = p.titulo || "Proyeccion sin titulo";
+
+      const desp = (p.desposte || []).map(r => `
+        <tr>
+          <td>${esc(r.cliente)}</td>
+          <td class="text-center">${esc(r.tipo ?? "--")}</td>
+          <td class="text-right">${esc(r.canales)}</td>
+          <td class="text-right">${esc(r.operarios)}</td>
+          <td class="text-right">${esc(Number(r.vel_canal_h).toFixed(2))}</td>
+          <td class="text-right">${esc(r.vel_canal_hh)}</td>
+          <td class="text-right">${esc(r.tiempo)}</td>
+        </tr>`).join("") || '<tr><td colspan="7" class="text-center text-slate-500 py-2">Sin filas</td></tr>';
+
+      const porc = (p.porcionado || []).map(r => `
+        <tr>
+          <td>${esc(r.cliente)}</td>
+          <td class="text-right">${esc(r.cant_kg)}</td>
+          <td class="text-right">${esc(r.operarios)}</td>
+          <td class="text-right">${esc(r.vel_kg_hh)}</td>
+          <td class="text-right">${esc(r.tiempo)}</td>
+        </tr>`).join("");
+
+      const infoItems = [
+        ["Hora inicio", p.hora_inicio], ["Tiempo descanso", p.descanso],
+        ["Parada reuniones", p.parada], ["Duracion proceso", p.duracion],
+        ["Hora salida", p.salida], ["Tiempo en planta", p.tiempo_planta],
+        ["Aplica comidas", p.aplica_comidas],
+      ].map(([k, v]) => `<div class="m-info"><span>${k}</span><strong>${esc(v || "--")}</strong></div>`).join("");
+
+      $("mBody").innerHTML = `
+        <div class="m-info-grid">${infoItems}</div>
+        <div class="m-totals">
+          <span>Totales:</span>
+          <strong>${esc(p.total_canales ?? "--")}</strong> canales ·
+          <strong>${esc(p.total_operarios ?? "--")}</strong> operarios ·
+          <strong>${esc(p.total_tiempo || "--")}</strong> tiempo
+        </div>
+        <h4 class="m-subtitle">Desposte</h4>
+        <div class="overflow-x-auto"><table class="orion-table proy-table">
+          <thead><tr><th>Cliente</th><th class="text-center">Tipo</th><th class="text-right">Canales</th>
+          <th class="text-right">Operarios</th><th class="text-right">Vel canal/hr</th>
+          <th class="text-right">Vel canal/hr/hm</th><th class="text-right">Tiempo</th></tr></thead>
+          <tbody>${desp}</tbody>
+        </table></div>
+        ${porc ? `
+        <h4 class="m-subtitle">Porcionado</h4>
+        <div class="overflow-x-auto"><table class="orion-table proy-table">
+          <thead><tr><th>Cliente</th><th class="text-right">Cant kg</th><th class="text-right">Operarios</th>
+          <th class="text-right">Vel kg/hr/hm</th><th class="text-right">Tiempo</th></tr></thead>
+          <tbody>${porc}</tbody>
+        </table></div>` : ""}
+      `;
+      $("proyModal").classList.remove("hidden");
+    });
+  }
+
+  function cerrarModal() {
+    $("proyModal").classList.add("hidden");
+    modalId = null;
   }
 
   // ---------- Carga inicial ----------
@@ -346,6 +429,17 @@
     });
     $("btnGuardarProy").addEventListener("click", guardarProyeccion);
     $("btnNuevaProy").addEventListener("click", nuevaProyeccion);
+    $("mClose").addEventListener("click", cerrarModal);
+    $("mCerrar").addEventListener("click", cerrarModal);
+    $("mCargar").addEventListener("click", () => {
+      if (modalId) { const id = modalId; cerrarModal(); cargarProyeccion(id); }
+    });
+    $("proyModal").addEventListener("click", (e) => {
+      if (e.target === $("proyModal")) cerrarModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !$("proyModal").classList.contains("hidden")) cerrarModal();
+    });
     ["igHoraInicio", "igDescanso", "igParada"].forEach(id => {
       $(id).addEventListener("input", recalc);
     });
