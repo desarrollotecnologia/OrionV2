@@ -1,6 +1,6 @@
 @echo off
 
-REM Lanzador BeefData - red local 192.168.20.205:8004
+REM Lanzador Cut Beef - red local 192.168.20.205:8004
 
 cd /d "%~dp0"
 
@@ -98,7 +98,7 @@ echo.
 
 echo ========================================
 
-echo   BeefData - http://%FLASK_HOST%:%FLASK_PORT%/
+echo   Cut Beef - http://%FLASK_HOST%:%FLASK_PORT%/
 
 echo   Acceso en red: http://192.168.20.205:8004/
 

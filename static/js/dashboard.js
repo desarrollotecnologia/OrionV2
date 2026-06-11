@@ -59,6 +59,7 @@
       labels,
       datasets: [
         { label: 'Canal/h', data: rows.map(r => r.canal_h || 0), backgroundColor: palette.canalH, borderRadius: 8 },
+        { label: 'Canal/hombre', data: rows.map(r => r.canal_hh || 0), backgroundColor: palette.canalHH, borderRadius: 8 },
         { label: 'Kilos/h', data: rows.map(r => r.kilos_h || 0), backgroundColor: palette.kilosH, borderRadius: 8, yAxisID: 'y2' }
       ]
     };
@@ -213,6 +214,7 @@
     document.getElementById('resumenCanales').textContent = Live.fmt.num(r.canales);
     document.getElementById('resumenKilos').textContent = Live.fmt.num(r.kilos, 1);
     document.getElementById('resumenCanalH').textContent = r.canal_h_prom != null ? Number(r.canal_h_prom).toFixed(2) : '--';
+    document.getElementById('resumenCanalHH').textContent = r.canal_hh_prom != null ? Number(r.canal_hh_prom).toFixed(2) : '--';
     document.getElementById('resumenKilosH').textContent = r.kilos_h_prom != null ? Number(r.kilos_h_prom).toFixed(1) : '--';
   }
 

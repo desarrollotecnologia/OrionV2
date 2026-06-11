@@ -31,10 +31,10 @@
     const t = document.getElementById('toast');
     if (!t) return;
     const colors = {
-      info:    'border-orion-600 text-green-800 bg-white',
-      ok:      'border-orion-600 text-green-800 bg-green-50',
-      warn:    'border-amber-400 text-amber-900 bg-amber-50',
-      error:   'border-beef-600 text-red-800 bg-red-50'
+      info:    'border-[#dfe5e1] text-[#5c6b63] bg-white',
+      ok:      'border-[#d1ddd3] text-[#3d5c48] bg-[#e8efe9]',
+      warn:    'border-[#e8dcc0] text-[#7a6530] bg-[#faf6ef]',
+      error:   'border-[#e0cfd1] text-[#653a44] bg-[#f3ecee]'
     };
     t.className = `fixed top-6 right-6 z-50 border px-4 py-3 rounded-xl shadow-xl text-sm show ${colors[kind] || colors.info}`;
     t.textContent = msg;

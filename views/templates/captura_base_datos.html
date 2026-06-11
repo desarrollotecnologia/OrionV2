@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Proceso productivo · BeefData{% endblock %}
+{% block title %}Proceso productivo · Cut Beef{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
-    <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Captura</p>
-    <h1 class="text-3xl font-bold mt-1">Proceso productivo · nuevo registro</h1>
-    <p class="text-slate-400 text-sm mt-1">Registra la operacion del dia: cliente, especie, proceso, canales, tiempos y velocidades.</p>
+    <p class="page-eyebrow">Captura</p>
+    <h1 class="page-title">Proceso productivo · nuevo registro</h1>
+    <p class="page-subtitle">Registra la operacion del dia: cliente, especie, proceso, canales, tiempos y velocidades.</p>
   </div>
-  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
-    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span class="text-slate-300">Registros manuales:</span>
-    <span id="manualCount" class="text-slate-100 font-medium">--</span>
+  <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
+    <span class="w-1.5 h-1.5 rounded-full bg-orion-500"></span>
+    <span class="text-[#8a9690]">Registros manuales:</span>
+    <span id="manualCount" class="text-[#2f3a35] font-medium">--</span>
   </div>
 </header>
 
@@ -36,84 +36,146 @@
     </div>
 
     <div class="ac-wrap" id="clienteAcWrap">
-      <label class="lbl">Cliente <span class="text-orion-300">*</span></label>
+      <label class="lbl">Cliente <span class="req">*</span></label>
       <input type="text" name="cliente" id="f_cliente" required autocomplete="off"
              placeholder="Escribe para buscar cliente..." class="inp" />
       <div id="clienteAcList" class="ac-list hidden" role="listbox"></div>
       <p class="hint" id="f_cliente_hint">Escribe para buscar. Si es nuevo, escribelo completo y guarda.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="lbl">Proceso <span class="text-orion-300">*</span></label>
-        <select name="proceso" id="f_proceso" required class="inp"></select>
+    <div id="refTiempoPanel" class="ref-tiempo hidden">
+      <div class="ref-tiempo-head">
+        <p class="ref-tiempo-title">Tiempo produccion · referencia del cliente</p>
+        <p class="hint mb-0">Compara lo estimado vs lo que registras hoy en el turno.</p>
       </div>
-      <div>
-        <label class="lbl">Operarios</label>
-        <input type="number" name="operarios" id="f_operarios" min="0" step="1" placeholder="Ej. 12" class="inp" />
+      <dl class="ref-tiempo-grid">
+        <div><dt>Canales prom.</dt><dd id="refCanalesProm">--</dd></div>
+        <div><dt>Tiempo prom.</dt><dd id="refTiempoProm">--</dd></div>
+        <div><dt>Tiempo estimado</dt><dd id="refTiempoEst">--</dd></div>
+      </dl>
+    </div>
+
+    <div class="form-block">
+      <p class="form-block-title">Produccion del turno</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="lbl">Proceso <span class="req">*</span></label>
+          <select name="proceso" id="f_proceso" required class="inp"></select>
+        </div>
+        <div>
+          <label class="lbl">Operarios</label>
+          <input type="number" name="operarios" id="f_operarios" min="0" step="1" placeholder="Ej. 12" class="inp" />
+          <p class="hint">Necesario para calcular canal / hombre</p>
+        </div>
+        <div>
+          <label class="lbl">Lote</label>
+          <input type="text" name="lote" id="f_lote" placeholder="OLP2575" class="inp" />
+        </div>
       </div>
-      <div>
-        <label class="lbl">Lote</label>
-        <input type="text" name="lote" id="f_lote" placeholder="OLP2575" class="inp" />
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div>
+          <label class="lbl">Canales</label>
+          <input type="number" step="0.01" name="canales" id="f_canales" placeholder="0" class="inp" />
+        </div>
+        <div>
+          <label class="lbl">Kilos</label>
+          <input type="number" step="0.01" name="kilos" id="f_kilos" placeholder="0.00" class="inp" />
+        </div>
+        <div>
+          <label class="lbl">Tiempo reposo</label>
+          <input type="time" step="1" name="tiempo_reposo" id="f_reposo" value="00:00:00" class="inp" />
+          <p class="hint">Se resta del tiempo total del turno</p>
+        </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="lbl">Canales</label>
-        <input type="number" step="0.01" name="canales" id="f_canales" placeholder="0" class="inp" />
-      </div>
-      <div>
-        <label class="lbl">Kilos</label>
-        <input type="number" step="0.01" name="kilos" id="f_kilos" placeholder="0.00" class="inp" />
-      </div>
-      <div>
-        <label class="lbl">Tiempo reposo</label>
-        <input type="time" step="1" name="tiempo_reposo" id="f_reposo" value="00:00:00" class="inp" />
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="lbl">Hora inicio</label>
-        <input type="time" step="1" name="hora_inicio" id="f_hi" class="inp" />
-      </div>
-      <div>
-        <label class="lbl">Hora fin</label>
-        <input type="time" step="1" name="hora_fin" id="f_hf" class="inp" />
-      </div>
-      <div>
-        <label class="lbl">Tiempo total (auto)</label>
-        <input type="text" id="f_tt" disabled class="inp opacity-70" placeholder="00:00:00" />
+    <div class="form-block">
+      <p class="form-block-title">Tiempos del turno</p>
+      <p class="form-block-desc">Ingresa hora inicio y fin. El tiempo total se calcula solo restando el reposo.</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="lbl">Hora inicio</label>
+          <input type="time" step="1" name="hora_inicio" id="f_hi" class="inp" />
+        </div>
+        <div>
+          <label class="lbl">Hora fin</label>
+          <input type="time" step="1" name="hora_fin" id="f_hf" class="inp" />
+        </div>
+        <div>
+          <label class="lbl">Tiempo total</label>
+          <input type="text" id="f_tt" disabled class="inp inp-readonly" placeholder="00:00:00" />
+        </div>
       </div>
     </div>
 
-    <div class="bg-slate-800/40 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-3 gap-2">
-      <p>Velocidad canal/h: <span id="prev_canal_h" class="text-cyan-300 font-semibold">--</span></p>
-      <p>Velocidad kilos/h: <span id="prev_kilos_h" class="text-violet-300 font-semibold">--</span></p>
-      <p>Velocidad canal/HH: <span id="prev_canal_hh" class="text-emerald-300 font-semibold">--</span></p>
+    <div class="metrics-panel" id="metricsPanel">
+      <p class="metrics-title">Velocidades calculadas</p>
+      <div class="metrics-grid">
+        <div class="metric-card" id="metricCanalH">
+          <p class="metric-label">Canal / hora</p>
+          <p class="metric-value" id="prev_canal_h">--</p>
+          <p class="metric-formula">canales ÷ horas netas</p>
+          <p class="metric-hint" id="hint_canal_h">Completa canales, inicio y fin</p>
+        </div>
+        <div class="metric-card" id="metricKilosH">
+          <p class="metric-label">Kilos / hora</p>
+          <p class="metric-value" id="prev_kilos_h">--</p>
+          <p class="metric-formula">kilos ÷ horas netas</p>
+          <p class="metric-hint" id="hint_kilos_h">Completa kilos, inicio y fin</p>
+        </div>
+        <div class="metric-card metric-card-accent" id="metricCanalHH">
+          <p class="metric-label">Canal / hombre · hora</p>
+          <p class="metric-value" id="prev_canal_hh">--</p>
+          <p class="metric-formula">canales ÷ horas ÷ operarios</p>
+          <p class="metric-hint" id="hint_canal_hh">Agrega operarios para calcular</p>
+        </div>
+      </div>
     </div>
 
     <div class="flex flex-col md:flex-row gap-3 pt-2">
-      <button type="submit" id="btnGuardar"
-              class="px-5 py-2.5 bg-gradient-to-r from-orion-500 to-orion-700 hover:from-orion-400 hover:to-orion-600 transition rounded-lg font-semibold text-white shadow-lg shadow-orion-700/40">
-        Guardar registro
-      </button>
-      <button type="reset" id="btnLimpiar"
-              class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-medium text-slate-200">
-        Limpiar formulario
-      </button>
+      <button type="submit" id="btnGuardar" class="px-5 py-2.5">Guardar registro</button>
+      <button type="reset" id="btnLimpiar" class="btn-secondary px-5 py-2.5">Limpiar formulario</button>
     </div>
   </form>
 
-  <aside class="card">
-    <h2 class="text-lg font-bold">Atajos</h2>
-    <p class="text-xs text-slate-400 mt-1 mb-4">Procesos mas frecuentes (un clic los aplica al form)</p>
-    <div id="atajosProcesos" class="flex flex-wrap gap-2 mb-6"></div>
+  <aside class="card space-y-5">
+    <div>
+      <h2 class="text-base font-semibold text-[#2f3a35]">Atajos</h2>
+      <p class="hint mt-1">Procesos frecuentes · un clic los aplica</p>
+      <div id="atajosProcesos" class="flex flex-wrap gap-2 mt-3"></div>
+    </div>
 
-    <h3 class="text-sm font-bold mt-4 mb-2 text-slate-300 uppercase tracking-wide">Top clientes</h3>
-    <p class="text-xs text-slate-500 mb-2">Click para autocompletar</p>
-    <div id="atajosClientes" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1 text-xs"></div>
+    <div class="border-t border-[#eef1ef] pt-4">
+      <h3 class="text-sm font-semibold text-[#2f3a35]">Top clientes</h3>
+      <p class="hint">Click para autocompletar</p>
+      <div id="atajosClientes" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 mt-2"></div>
+    </div>
+
+    <div class="border-t border-[#eef1ef] pt-4" id="asideTiempoRef">
+      <h3 class="text-sm font-semibold text-[#2f3a35]">Alimentar tiempo produccion</h3>
+      <p class="hint">Referencia por cliente (como hoja TIEMPO PRODUCCION del Excel)</p>
+      <form id="formTiempoRef" class="space-y-3 mt-3">
+        <div>
+          <label class="lbl">Cliente</label>
+          <input type="text" id="ref_cliente" readonly class="inp inp-readonly" placeholder="Selecciona cliente arriba" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="lbl">Canales prom.</label>
+            <input type="number" step="0.01" id="ref_canales_prom" class="inp" placeholder="0" />
+          </div>
+          <div>
+            <label class="lbl">Tiempo prom.</label>
+            <input type="time" step="1" id="ref_tiempo_prom" class="inp" />
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Tiempo estimado</label>
+          <input type="time" step="1" id="ref_tiempo_est" class="inp" />
+        </div>
+        <button type="submit" class="w-full py-2 text-sm">Guardar referencia</button>
+      </form>
+    </div>
   </aside>
 </section>
 
@@ -129,7 +191,8 @@
       <thead><tr>
         <th>Fecha</th><th>Cliente</th><th>Especie</th><th>Proceso</th>
         <th class="text-right">Canales</th><th class="text-right">Kilos</th>
-        <th class="text-right">Canal/h</th><th class="text-right">Kg/h</th>
+        <th class="text-right">Canal/h</th><th class="text-right">Canal/hom</th><th class="text-right">Kg/h</th>
+        <th>Tiempo</th>
         <th>Acciones</th>
       </tr></thead>
       <tbody id="tablaManuales"></tbody>
@@ -139,5 +202,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=4"></script>
 {% endblock %}

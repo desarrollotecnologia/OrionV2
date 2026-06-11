@@ -110,7 +110,7 @@ def create_app() -> tuple[Flask, SocketIO]:
     @app.context_processor
     def inject_branding():
         return {
-            "app_name": "BeefData",
+            "app_name": "Cut Beef",
             "site_portal_url": config.SITE_PORTAL_URL,
             "app_public_url": config.APP_PUBLIC_URL,
         }
@@ -172,7 +172,7 @@ def main() -> int:
 
     try:
         log.info(
-            "Servidor BeefData listo en http://%s:%s/  (CTRL+C para detener)",
+            "Servidor Cut Beef listo en http://%s:%s/  (CTRL+C para detener)",
             config.FLASK_HOST,
             config.FLASK_PORT,
         )

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}BeefData{% endblock %}</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffffff'/%3E%3Crect x='4' y='4' width='56' height='56' rx='12' fill='%2315803d'/%3E%3Crect x='8' y='30' width='48' height='10' fill='%23c41e3a'/%3E%3C/svg%3E" />
+  <title>{% block title %}Cut Beef{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f7f8f6'/%3E%3Crect x='6' y='6' width='52' height='52' rx='11' fill='%234a6f56'/%3E%3Crect x='14' y='28' width='36' height='8' rx='2' fill='%238f5560'/%3E%3C/svg%3E" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,22 +12,22 @@
         extend: {
           colors: {
             orion: {
-              50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac',
-              400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d',
-              800: '#166534', 900: '#14532d', 950: '#052e16'
+              50: '#f6f8f6', 100: '#e8efe9', 200: '#d1ddd3', 300: '#a8bdb0',
+              400: '#7a9a82', 500: '#5c8268', 600: '#4a6f56', 700: '#3d5c48',
+              800: '#334a3c', 900: '#2a3d32', 950: '#1a261f'
             },
             beef: {
-              50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5',
-              400: '#f87171', 500: '#ef4444', 600: '#c41e3a', 700: '#991b1b',
-              800: '#7f1d1d', 900: '#450a0a', 950: '#2a0606'
+              50: '#faf6f6', 100: '#f0e8e9', 200: '#e0cfd1', 300: '#c9a8ad',
+              400: '#a8737c', 500: '#8f5560', 600: '#7a4652', 700: '#653a44',
+              800: '#523038', 900: '#3f252b', 950: '#2a181c'
             }
           }
         }
       }
     }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/orion.css') }}?v=3" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/orion.css') }}?v=5" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   {% block head_extra %}{% endblock %}
@@ -35,19 +35,19 @@
 <body class="font-inter min-h-screen">
 {% if session.user_id %}
 <div class="flex min-h-screen">
-  <aside class="w-64 bg-white border-r-2 border-green-700/15 flex flex-col shadow-sm">
-    <div class="p-5 border-b border-green-100 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-beef-600 to-orion-700 grid place-items-center shadow-md shadow-green-900/20">
-        <span class="text-white font-bold text-xs tracking-tight">BD</span>
+  <aside class="w-64 bg-white border-r border-[#dfe5e1] flex flex-col">
+    <div class="p-5 border-b border-[#eef1ef] flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-orion-600 grid place-items-center shadow-sm">
+        <span class="text-white font-semibold text-[10px] tracking-wide">CB</span>
       </div>
       <div>
-        <p class="text-lg font-bold tracking-tight text-green-900">BeefData</p>
-        <p class="text-xs text-slate-500">Colbeef · Tablero operativo</p>
+        <p class="text-base font-semibold tracking-tight text-[#2f3a35]">Cut Beef</p>
+        <p class="text-[11px] text-[#8a9690]">Colbeef · Tablero operativo</p>
       </div>
     </div>
 
-    <nav class="flex-1 px-3 py-4 space-y-1 text-sm overflow-y-auto">
-      <p class="px-3 pb-1 pt-2 text-[10px] uppercase tracking-widest text-green-800/50 font-bold">Vistas</p>
+    <nav class="flex-1 px-3 py-4 space-y-0.5 text-sm overflow-y-auto">
+      <p class="nav-section pt-1">Vistas</p>
       <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if page=='dashboard' %}active{% endif %}">
         <span class="dot"></span><span>Dashboard</span>
       </a>
@@ -61,7 +61,7 @@
         <span class="dot"></span><span>Paradas</span>
       </a>
 
-      <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-green-800/50 font-bold">Captura de datos</p>
+      <p class="nav-section pt-4">Captura de datos</p>
       <a href="{{ url_for('captura.base_datos') }}" class="nav-link {% if page=='captura_bd' %}active{% endif %}">
         <span class="dot"></span><span>Proceso productivo</span>
       </a>
@@ -73,30 +73,30 @@
       </a>
 
       {% if session.user_role == 'admin' %}
-      <p class="px-3 pb-1 pt-5 text-[10px] uppercase tracking-widest text-green-800/50 font-bold">Administracion</p>
+      <p class="nav-section pt-4">Administracion</p>
       <a href="{{ url_for('usuarios.index') }}" class="nav-link {% if page=='usuarios' %}active{% endif %}">
         <span class="dot"></span><span>Usuarios</span>
       </a>
       {% endif %}
     </nav>
 
-    <div class="p-4 border-t border-green-100 space-y-3 bg-green-50/40">
-      <div class="flex items-center justify-between text-xs">
-        <span class="flex items-center gap-2 text-green-900"><span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>En vivo</span></span>
-        <span id="liveTimestamp" class="text-slate-500">--</span>
+    <div class="p-4 border-t border-[#eef1ef] space-y-3 bg-[#fafbfa]">
+      <div class="flex items-center justify-between text-xs text-[#5c6b63]">
+        <span class="flex items-center gap-2"><span id="liveDot" class="w-1.5 h-1.5 rounded-full bg-orion-500"></span><span>En vivo</span></span>
+        <span id="liveTimestamp" class="text-[#8a9690]">--</span>
       </div>
-      <button id="syncBtn" class="w-full py-2 px-3 text-sm bg-gradient-to-r from-beef-600 to-orion-700 hover:from-beef-700 hover:to-orion-800 transition rounded-lg font-medium text-white shadow-md shadow-green-900/15">Sincronizar Excel</button>
-      <div class="text-xs text-slate-500 leading-snug">
+      <button id="syncBtn" type="button">Sincronizar Excel</button>
+      <div class="text-xs text-[#8a9690] leading-snug">
         <span class="block">Sesion:</span>
-        <span class="text-slate-800 font-medium truncate block">{{ session.user_name }}</span>
+        <span class="text-[#2f3a35] font-medium truncate block">{{ session.user_name }}</span>
       </div>
-      <a href="{{ url_for('auth.logout') }}" class="text-xs text-beef-700 hover:text-beef-800 underline">Cerrar sesion</a>
-      <a href="{{ url_for('auth.cambiar_contrasena') }}" class="text-xs text-slate-500 hover:text-green-800 underline block mt-1">Cambiar contraseña</a>
+      <a href="{{ url_for('auth.logout') }}" class="text-xs text-beef-600 hover:text-beef-700 underline underline-offset-2">Cerrar sesion</a>
+      <a href="{{ url_for('auth.cambiar_contrasena') }}" class="text-xs text-[#8a9690] hover:text-orion-700 underline underline-offset-2 block">Cambiar contraseña</a>
     </div>
   </aside>
 
-  <main class="flex-1 p-6 lg:p-10 bg-[#f4f7f4]">
-    <div id="toast" class="hidden fixed top-6 right-6 z-50 bg-white border border-green-200 px-4 py-3 rounded-xl shadow-xl text-sm text-slate-800"></div>
+  <main class="flex-1 p-6 lg:p-9 bg-[#f7f8f6]">
+    <div id="toast" class="hidden fixed top-6 right-6 z-50 bg-white border border-[#dfe5e1] px-4 py-3 rounded-lg shadow-lg text-sm text-[#2f3a35]"></div>
     {% block content %}{% endblock %}
   </main>
 </div>
@@ -104,7 +104,7 @@
   {% block fullbody %}{% endblock %}
 {% endif %}
 
-<script src="{{ url_for('static', filename='js/live.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/live.js') }}?v=4"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

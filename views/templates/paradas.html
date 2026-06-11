@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Paradas · BeefData{% endblock %}
+{% block title %}Paradas · Cut Beef{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
@@ -8,7 +8,7 @@
     <p class="text-slate-400 text-sm mt-1">Analisis del tiempo improductivo del año en curso.</p>
   </div>
   <div class="flex flex-wrap items-center gap-2">
-    <a href="{{ url_for('captura.paradas') }}" class="px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">
+    <a href="{{ url_for('captura.paradas') }}" class="inline-flex px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-700 text-sm font-semibold text-white transition">
       + Registrar parada
     </a>
     <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">

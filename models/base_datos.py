@@ -54,7 +54,8 @@ def resumen_dia() -> dict:
         "SELECT MAX(fecha) AS ultima_fecha, "
         "       SUM(canales) AS canales, SUM(kilos) AS kilos, "
         "       AVG(velocidad_canal_h) AS canal_h_prom, "
-        "       AVG(velocidad_kilos_h) AS kilos_h_prom "
+        "       AVG(velocidad_kilos_h) AS kilos_h_prom, "
+        "       AVG(velocidad_canal_hh) AS canal_hh_prom "
         "FROM base_datos "
         "WHERE fecha = (SELECT MAX(fecha) FROM base_datos)"
     )
@@ -224,8 +225,8 @@ def insertar_manual(payload: dict[str, Any]) -> dict[str, Any]:
 def manuales_recientes(limit: int = 30) -> list[dict]:
     return db.fetch_all(
         "SELECT id, creado_en, fecha, cliente, especie, proceso, operarios, "
-        "       canales, kilos, hora_inicio, hora_fin, tiempo_total, "
-        "       velocidad_canal_h, velocidad_kilos_h "
+        "       canales, kilos, hora_inicio, hora_fin, tiempo_total, operarios, "
+        "       velocidad_canal_h, velocidad_kilos_h, velocidad_canal_hh "
         "FROM base_datos WHERE origen='manual' "
         "ORDER BY id DESC LIMIT %s",
         (limit,),

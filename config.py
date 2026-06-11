@@ -48,7 +48,7 @@ class Config:
     DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "Colbeef2026*")
     DEFAULT_RESET_PASSWORD = os.getenv("DEFAULT_RESET_PASSWORD", "Colbeef2026*")
 
-    # URLs publicas (portal site.html y app BeefData)
+    # URLs publicas (portal site.html y app Cut Beef)
     APP_PUBLIC_URL = os.getenv("APP_PUBLIC_URL", "http://192.168.20.205:8004/")
     SITE_PORTAL_URL = os.getenv("SITE_PORTAL_URL", "http://192.168.20.205:8000/site.html")
 

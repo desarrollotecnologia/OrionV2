@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Captura Paradas · BeefData{% endblock %}
+{% block title %}Captura Paradas · Cut Beef{% endblock %}
 {% block content %}
 <header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
   <div>
@@ -44,12 +44,8 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
         <p class="lbl mb-0">Paradas del dia</p>
         <div class="flex flex-wrap gap-2">
-          <button type="button" id="btnNuevaCategoria" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs border border-slate-700">
-            + Nueva categoria
-          </button>
-          <button type="button" id="btnAgregarLinea" class="px-3 py-1.5 rounded-lg bg-orion-700/40 hover:bg-orion-600/40 text-xs border border-orion-700 text-orion-100">
-            + Agregar parada
-          </button>
+          <button type="button" id="btnNuevaCategoria" class="btn-secondary px-3 py-1.5 text-xs">+ Nueva categoria</button>
+          <button type="button" id="btnAgregarLinea" class="btn-secondary px-3 py-1.5 text-xs">+ Agregar parada</button>
         </div>
       </div>
       <div id="lineasParadas" class="space-y-2"></div>
@@ -67,8 +63,8 @@
                  placeholder="Ej: Falta de personal, Mantenimiento preventivo..." />
         </div>
         <div class="flex justify-end gap-2">
-          <button type="button" id="btnCancelarCat" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Cancelar</button>
-          <button type="button" id="btnGuardarCat" class="px-4 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold">Guardar categoria</button>
+          <button type="button" id="btnCancelarCat" class="btn-secondary px-4 py-2 text-sm">Cancelar</button>
+          <button type="button" id="btnGuardarCat" class="btn-primary px-4 py-2 text-sm">Guardar categoria</button>
         </div>
       </div>
     </div>
@@ -80,10 +76,8 @@
         <p class="text-xs text-slate-500" id="totalHoras">0h 0m</p>
       </div>
       <div class="flex gap-2">
-        <button type="button" id="btnLimpiar" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Limpiar</button>
-        <button type="submit" class="px-5 py-2 rounded-lg bg-orion-600 hover:bg-orion-500 text-sm font-semibold shadow shadow-orion-700/30">
-          Guardar parada
-        </button>
+        <button type="button" id="btnLimpiar" class="btn-secondary px-4 py-2 text-sm">Limpiar</button>
+        <button type="submit" class="px-5 py-2 text-sm">Guardar registro</button>
       </div>
     </div>
 

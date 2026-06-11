@@ -211,6 +211,25 @@ def captura_options():
 
 # -------- Captura: BASE DATOS --------
 
+@bp.route("/captura/tiempo-produccion", methods=["GET", "POST"])
+@login_required
+def captura_tiempo_produccion():
+    if request.method == "GET":
+        cliente = (request.args.get("cliente") or "").strip()
+        if cliente:
+            ref = tiempo_model.referencia_cliente(cliente)
+            return jsonify({"ok": True, "referencia": _serialize(ref) if ref else None})
+        return jsonify({"ok": True, "referencias": _serialize_rows(tiempo_model.por_cliente())})
+
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    try:
+        ref = tiempo_model.upsert_referencia(payload)
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    live_bus.broadcast("orion:sync", {"summary": {"ok": True, "fuente": "captura"}})
+    return jsonify({"ok": True, "referencia": _serialize(ref)})
+
+
 @bp.route("/captura/base-datos", methods=["POST"])
 @login_required
 def captura_base_datos_create():
