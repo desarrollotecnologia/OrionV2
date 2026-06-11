@@ -24,3 +24,9 @@ def merma_frio():
 @login_required
 def paradas():
     return render_template("captura_paradas.html", page="captura_paradas")
+
+
+@bp.route("/proyeccion")
+@login_required
+def proyeccion():
+    return render_template("proyeccion.html", page="captura_proyeccion")

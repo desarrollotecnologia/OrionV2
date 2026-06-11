@@ -73,7 +73,6 @@
       b.addEventListener("click", () => {
         cliente.value = v;
         if (clienteAc) clienteAc.hide();
-        cargarReferenciaCliente(v);
         cliente.focus();
       });
       cont.appendChild(b);
@@ -90,8 +89,7 @@
       const clientes = data.clientes_base_datos || data.clientes || [];
       if (!clienteAc) {
         clienteAc = Live.autocomplete(cliente, $("clienteAcList"), {
-          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`,
-          onSelect: (val) => cargarReferenciaCliente(val),
+          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`
         });
       }
       clienteAc.setItems(clientes);
@@ -99,81 +97,6 @@
       renderClientesAside(clientes);
     });
   }
-
-  // ----- Referencia tiempo produccion por cliente -----
-  let refActual = null;
-
-  function cargarReferenciaCliente(nombre) {
-    const panel = $("refTiempoPanel");
-    const refClienteField = $("ref_cliente");
-    if (!nombre || !nombre.trim()) {
-      refActual = null;
-      if (panel) panel.classList.add("hidden");
-      if (refClienteField) refClienteField.value = "";
-      return Promise.resolve();
-    }
-    const q = encodeURIComponent(nombre.trim());
-    return Live.fetchJSON(`/api/captura/tiempo-produccion?cliente=${q}`).then(data => {
-      refActual = data.referencia || null;
-      if (refClienteField) refClienteField.value = nombre.trim().toUpperCase();
-      if (panel) panel.classList.remove("hidden");
-      $("refCanalesProm").textContent = refActual?.canales_promedio != null
-        ? Live.fmt.num(refActual.canales_promedio, 1) : "Sin dato";
-      $("refTiempoProm").textContent = refActual?.tiempo_promedio || "Sin dato";
-      $("refTiempoEst").textContent = refActual?.tiempo_estimado || "Sin dato";
-      if ($("ref_canales_prom")) $("ref_canales_prom").value = refActual?.canales_promedio ?? "";
-      if ($("ref_tiempo_prom")) $("ref_tiempo_prom").value = normalizarTimeInput(refActual?.tiempo_promedio);
-      if ($("ref_tiempo_est")) $("ref_tiempo_est").value = normalizarTimeInput(refActual?.tiempo_estimado);
-    }).catch(() => {
-      refActual = null;
-      if (panel) panel.classList.remove("hidden");
-      $("refCanalesProm").textContent = "Sin dato";
-      $("refTiempoProm").textContent = "Sin dato";
-      $("refTiempoEst").textContent = "Sin dato";
-    });
-  }
-
-  function normalizarTimeInput(val) {
-    if (!val) return "";
-    const s = String(val).trim();
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
-      const p = s.split(":");
-      if (p.length === 2) return `${p[0].padStart(2,"0")}:${p[1].padStart(2,"0")}:00`;
-      return `${p[0].padStart(2,"0")}:${p[1].padStart(2,"0")}:${(p[2]||"00").padStart(2,"0")}`;
-    }
-    return "";
-  }
-
-  cliente.addEventListener("change", () => cargarReferenciaCliente(cliente.value));
-  cliente.addEventListener("blur", () => cargarReferenciaCliente(cliente.value));
-
-  $("formTiempoRef").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const c = cliente.value.trim();
-    if (!c) { Live.toast("Selecciona un cliente en el formulario principal", "warn"); return; }
-    const payload = {
-      cliente: c.toUpperCase(),
-      canales_promedio: $("ref_canales_prom").value || null,
-      tiempo_promedio: $("ref_tiempo_prom").value || null,
-      tiempo_estimado: $("ref_tiempo_est").value || null,
-    };
-    fetch("/api/captura/tiempo-produccion", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify(payload),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) {
-          Live.toast("Referencia de tiempo guardada", "ok");
-          cargarReferenciaCliente(c);
-        } else {
-          Live.toast(data.error || "No se pudo guardar", "error");
-        }
-      })
-      .catch(() => Live.toast("Fallo la peticion", "error"));
-  });
 
   // ----- Calculo de tiempo total y velocidades -----
   function hhmmssToSec(s) {
@@ -236,17 +159,6 @@
     } else {
       setMetric("prev_canal_hh", "--", "hint_canal_hh", "", op ? "Completa tiempos y canales" : "Agrega operarios para calcular");
       if (!op) $("metricCanalHH")?.classList.add("metric-card-warn");
-    }
-
-    if (refActual?.tiempo_estimado && tt.value) {
-      const estSeg = hhmmssToSec(normalizarTimeInput(refActual.tiempo_estimado));
-      const actSeg = hhmmssToSec(tt.value);
-      if (estSeg != null && actSeg != null) {
-        const diff = actSeg - estSeg;
-        const sign = diff > 0 ? "+" : "";
-        const hint = $("refTiempoEst");
-        if (hint) hint.textContent = `${refActual.tiempo_estimado} (${sign}${Math.round(diff / 60)} min vs turno)`;
-      }
     }
   }
   ["change", "input"].forEach(ev => {

@@ -230,6 +230,16 @@ def captura_tiempo_produccion():
     return jsonify({"ok": True, "referencia": _serialize(ref)})
 
 
+@bp.route("/proyeccion/options")
+@login_required
+def proyeccion_options():
+    """Datos para la herramienta de proyeccion de tiempos de desposte."""
+    return jsonify({
+        "clientes": base_datos_model.clientes(),
+        "velocidades": _serialize_rows(base_datos_model.velocidades_por_cliente()),
+    })
+
+
 @bp.route("/captura/base-datos", methods=["POST"])
 @login_required
 def captura_base_datos_create():

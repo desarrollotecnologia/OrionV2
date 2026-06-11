@@ -547,6 +547,101 @@ button[type="submit"]:not(.btn-secondary):not(.btn-danger):hover {
 
 .linea-row .linea-del { font-size: 1.25rem; line-height: 1; }
 
+/* ===== Tiempos proyectados (calculadora) ===== */
+.proy-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cb-text);
+  margin: 0;
+}
+.proy-table th { white-space: nowrap; }
+.proy-table td { padding: 0.35rem 0.5rem; vertical-align: middle; }
+.cell-inp {
+  width: 100%;
+  min-width: 70px;
+  background: #fff;
+  border: 1px solid var(--cb-border);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.8rem;
+  color: var(--cb-text);
+  transition: border-color .15s, box-shadow .15s;
+}
+.cell-inp:focus {
+  outline: none;
+  border-color: var(--cb-green);
+  box-shadow: 0 0 0 3px rgba(74, 111, 86, 0.12);
+}
+.proy-table .f-velhh,
+.proy-table .f-tiempo {
+  font-weight: 600;
+  color: var(--cb-green-dark);
+  font-variant-numeric: tabular-nums;
+}
+.proy-total td {
+  border-top: 2px solid var(--cb-border);
+  background: var(--cb-green-soft);
+  color: var(--cb-green-dark) !important;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.row-del {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--cb-border);
+  background: #fff;
+  color: var(--cb-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all .15s;
+}
+.row-del:hover {
+  border-color: #c9a8ad;
+  color: #8f5560;
+  background: #faf6f6;
+}
+
+/* Informacion general */
+.info-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--cb-border);
+  border-radius: 0.5rem;
+  background: #fff;
+}
+.info-row > span {
+  font-size: 0.78rem;
+  color: var(--cb-text-soft);
+  font-weight: 500;
+}
+.info-row .inp { width: 7.5rem; }
+.info-row-calc { background: #fafbfa; }
+.info-row-calc strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cb-text);
+  font-variant-numeric: tabular-nums;
+}
+.badge-comida {
+  padding: 0.15rem 0.6rem;
+  border-radius: 0.4rem;
+  background: #f3f6f4;
+  border: 1px solid var(--cb-border);
+  color: var(--cb-text-soft);
+  font-size: 0.78rem;
+}
+.badge-comida-si {
+  background: var(--cb-green-soft);
+  border-color: var(--cb-green);
+  color: var(--cb-green-dark);
+}
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #d1d9d4; border-radius: 6px; }
 ::-webkit-scrollbar-thumb:hover { background: #b8c4bc; }

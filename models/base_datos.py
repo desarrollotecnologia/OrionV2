@@ -49,6 +49,22 @@ def velocidades_recientes(dias: int = 30) -> list[dict]:
     )
 
 
+def velocidades_por_cliente() -> list[dict]:
+    """Promedios historicos de velocidad por cliente, para proyectar tiempos."""
+    return db.fetch_all(
+        "SELECT cliente, "
+        "       AVG(velocidad_canal_h)  AS canal_h, "
+        "       AVG(velocidad_canal_hh) AS canal_hh, "
+        "       AVG(velocidad_kilos_h)  AS kilos_h, "
+        "       AVG(operarios)          AS operarios_prom, "
+        "       COUNT(*)                AS registros "
+        "FROM base_datos "
+        "WHERE cliente IS NOT NULL AND cliente <> '' "
+        "  AND velocidad_canal_h IS NOT NULL AND velocidad_canal_h > 0 "
+        "GROUP BY cliente"
+    )
+
+
 def resumen_dia() -> dict:
     row = db.fetch_one(
         "SELECT MAX(fecha) AS ultima_fecha, "

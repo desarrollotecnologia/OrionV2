@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Tiempos proyectados · Cut Beef{% endblock %}
+{% block content %}
+<header class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
+  <div>
+    <p class="page-eyebrow">Planeacion</p>
+    <h1 class="page-title">Tiempos proyectados de desposte</h1>
+    <p class="page-subtitle">Proyecta el turno: ingresa clientes, canales y operarios. El sistema calcula velocidades, tiempo estimado y el horario del turno usando las velocidades historicas reales.</p>
+  </div>
+  <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
+    <label class="text-[#8a9690]" for="proyFecha">Fecha proyeccion</label>
+    <input type="date" id="proyFecha" class="inp !py-1 !px-2 !w-auto text-xs" />
+  </div>
+</header>
+
+<section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <!-- ===== DESPOSTE ===== -->
+  <div class="card xl:col-span-2 space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="proy-title">Tiempos proyectados de desposte</h2>
+        <p class="hint mb-0">La velocidad canal/hr se autocompleta con el promedio historico del cliente; puedes ajustarla.</p>
+      </div>
+      <button type="button" id="btnAddDesposte" class="btn-secondary px-4 py-2 text-sm">+ Agregar fila</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="orion-table proy-table">
+        <thead><tr>
+          <th class="min-w-[180px]">Cliente</th>
+          <th class="text-center">Tipo desposte</th>
+          <th class="text-right">Canales</th>
+          <th class="text-right">Operarios</th>
+          <th class="text-right">Vel. canal/hr</th>
+          <th class="text-right">Vel. canal/hr/hm</th>
+          <th class="text-right">Tiempo estimado</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tbodyDesposte"></tbody>
+        <tfoot><tr class="proy-total">
+          <td>TOTALES</td>
+          <td></td>
+          <td class="text-right" id="totDespCanales">0</td>
+          <td class="text-right" id="totDespOperarios">0</td>
+          <td class="text-right" id="totDespVelH">0,00</td>
+          <td class="text-right" id="totDespVelHH">0,00</td>
+          <td class="text-right" id="totDespTiempo">0:00</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== INFORMACION GENERAL ===== -->
+  <aside class="card space-y-4">
+    <div>
+      <h2 class="proy-title">Informacion general</h2>
+      <p class="hint mb-0">Horario del turno calculado a partir de la duracion del proceso.</p>
+    </div>
+    <div class="info-grid">
+      <label class="info-row">
+        <span>Hora inicio</span>
+        <input type="time" id="igHoraInicio" class="inp !py-1.5" value="09:00" />
+      </label>
+      <label class="info-row">
+        <span>Tiempo descanso</span>
+        <input type="time" id="igDescanso" class="inp !py-1.5" value="01:00" />
+      </label>
+      <label class="info-row">
+        <span>Parada reuniones</span>
+        <input type="time" id="igParada" class="inp !py-1.5" value="00:00" />
+      </label>
+      <div class="info-row info-row-calc">
+        <span>Duracion del proceso</span>
+        <strong id="igDuracion">0:00</strong>
+      </div>
+      <div class="info-row info-row-calc">
+        <span>Tiempo estimado salida</span>
+        <strong id="igSalida">--:--</strong>
+      </div>
+      <div class="info-row info-row-calc">
+        <span>Tiempo personal en planta</span>
+        <strong id="igPlanta">0:00</strong>
+      </div>
+      <div class="info-row info-row-calc">
+        <span>Aplica solicitar comidas?</span>
+        <strong id="igComidas" class="badge-comida">NO</strong>
+      </div>
+    </div>
+    <p class="hint" id="igComidasHint">Se sugiere SI cuando la jornada en planta supera 10:00 o la salida pasa de las 20:00.</p>
+  </aside>
+</section>
+
+<!-- ===== PORCIONADO ===== -->
+<section class="card mt-6 space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="proy-title">Tiempos aprox. porcionado</h2>
+      <p class="hint mb-0">Velocidad kg/hr/hm por operario; el tiempo se calcula con la cantidad de kilos.</p>
+    </div>
+    <button type="button" id="btnAddPorcionado" class="btn-secondary px-4 py-2 text-sm">+ Agregar fila</button>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="orion-table proy-table">
+      <thead><tr>
+        <th class="min-w-[180px]">Cliente</th>
+        <th class="text-right">Cant. kg prom.</th>
+        <th class="text-right">Operarios</th>
+        <th class="text-right">Vel. kg/hr/hm</th>
+        <th class="text-right">Tiempo estimado</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="tbodyPorcionado"></tbody>
+      <tfoot><tr class="proy-total">
+        <td>TOTALES</td>
+        <td class="text-right" id="totPorKg">0</td>
+        <td class="text-right" id="totPorOperarios">0</td>
+        <td class="text-right" id="totPorVel">0,00</td>
+        <td class="text-right" id="totPorTiempo">0:00</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+  </div>
+</section>
+
+<datalist id="clientesList"></datalist>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=1"></script>
+{% endblock %}
