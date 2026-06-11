@@ -22,8 +22,14 @@ def latest(limit: int = 50) -> list[dict]:
     )
 
 
-def velocidad_por_proceso(limit: int = 30) -> list[dict]:
-    """Velocidades agregadas para visualizar."""
+def velocidad_por_proceso(limit: int = 30, desde: str | None = None, hasta: str | None = None) -> list[dict]:
+    """Velocidades agregadas para visualizar (opcionalmente filtradas por rango)."""
+    where = "WHERE proceso IS NOT NULL AND proceso <> '' "
+    params: list = []
+    if desde and hasta:
+        where += "AND fecha BETWEEN %s AND %s "
+        params.extend([desde, hasta])
+    params.append(limit)
     return db.fetch_all(
         "SELECT proceso, "
         "       AVG(velocidad_canal_h)  AS canal_h, "
@@ -31,9 +37,9 @@ def velocidad_por_proceso(limit: int = 30) -> list[dict]:
         "       AVG(velocidad_canal_hh) AS canal_hh, "
         "       COUNT(*) AS registros "
         "FROM base_datos "
-        "WHERE proceso IS NOT NULL AND proceso <> '' "
+        + where +
         "GROUP BY proceso ORDER BY registros DESC LIMIT %s",
-        (limit,),
+        tuple(params),
     )
 
 
@@ -65,13 +71,25 @@ def velocidades_por_cliente() -> list[dict]:
     )
 
 
-def resumen_dia() -> dict:
-    row = db.fetch_one(
-        "SELECT MAX(fecha) AS ultima_fecha, "
+def resumen_dia(desde: str | None = None, hasta: str | None = None) -> dict:
+    cols = (
         "       SUM(canales) AS canales, SUM(kilos) AS kilos, "
         "       AVG(velocidad_canal_h) AS canal_h_prom, "
         "       AVG(velocidad_kilos_h) AS kilos_h_prom, "
         "       AVG(velocidad_canal_hh) AS canal_hh_prom "
+    )
+    if desde and hasta:
+        row = db.fetch_one(
+            "SELECT MAX(fecha) AS ultima_fecha, " + cols +
+            "FROM base_datos WHERE fecha BETWEEN %s AND %s",
+            (desde, hasta),
+        )
+        out = row or {}
+        out["desde"] = desde
+        out["hasta"] = hasta
+        return out
+    row = db.fetch_one(
+        "SELECT MAX(fecha) AS ultima_fecha, " + cols +
         "FROM base_datos "
         "WHERE fecha = (SELECT MAX(fecha) FROM base_datos)"
     )

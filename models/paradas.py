@@ -244,8 +244,15 @@ def _sumar_extras_historicos() -> dict[str, float]:
 
 # --------------- Lecturas para dashboard ---------------
 
-def recientes(limit: int = 30, anio: int | None = None) -> list[dict]:
-    if anio is None:
+def recientes(limit: int = 30, anio: int | None = None,
+              desde: str | None = None, hasta: str | None = None) -> list[dict]:
+    if desde and hasta:
+        rows = db.fetch_all(
+            "SELECT * FROM paradas_std WHERE fecha BETWEEN %s AND %s "
+            "ORDER BY fecha DESC, id DESC LIMIT %s",
+            (desde, hasta, limit),
+        )
+    elif anio is None:
         rows = db.fetch_all(
             "SELECT * FROM paradas_std WHERE fecha IS NOT NULL "
             "ORDER BY fecha DESC, id DESC LIMIT %s",
@@ -262,9 +269,17 @@ def recientes(limit: int = 30, anio: int | None = None) -> list[dict]:
     return rows
 
 
-def total_por_categoria(dias: int = 365, anio: int | None = None) -> list[dict]:
+def total_por_categoria(dias: int = 365, anio: int | None = None,
+                        desde: str | None = None, hasta: str | None = None) -> list[dict]:
     select = ", ".join([f"COALESCE(SUM({c}),0) AS {c}" for c in CATEGORIA_COLS])
-    if anio is not None:
+    if desde and hasta:
+        sql = f"SELECT {select} FROM paradas_std WHERE fecha BETWEEN %s AND %s"
+        row = db.fetch_one(sql, (desde, hasta)) or {}
+        extra_rows = db.fetch_all(
+            "SELECT extras FROM paradas_std WHERE extras IS NOT NULL AND fecha BETWEEN %s AND %s",
+            (desde, hasta),
+        )
+    elif anio is not None:
         sql = f"SELECT {select} FROM paradas_std WHERE YEAR(fecha) = %s"
         row = db.fetch_one(sql, (anio,)) or {}
         extra_rows = db.fetch_all(
@@ -316,7 +331,15 @@ def total_por_categoria(dias: int = 365, anio: int | None = None) -> list[dict]:
     return out
 
 
-def tendencia_diaria(dias: int = 60, anio: int | None = None) -> list[dict]:
+def tendencia_diaria(dias: int = 60, anio: int | None = None,
+                     desde: str | None = None, hasta: str | None = None) -> list[dict]:
+    if desde and hasta:
+        return db.fetch_all(
+            "SELECT fecha, total FROM paradas_std "
+            "WHERE fecha BETWEEN %s AND %s "
+            "ORDER BY fecha ASC",
+            (desde, hasta),
+        )
     if anio is not None:
         return db.fetch_all(
             "SELECT fecha, total FROM paradas_std "

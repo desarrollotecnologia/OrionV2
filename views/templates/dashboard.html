@@ -7,12 +7,44 @@
     <h1 class="page-title">Dashboard <span id="dashHeaderMes" class="text-[#8a9690] font-medium text-xl"></span></h1>
     <p id="dashHeaderFecha" class="page-subtitle">Cargando datos en vivo desde Cut Beef...</p>
   </div>
-  <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
-    <span class="w-1.5 h-1.5 rounded-full bg-orion-500"></span>
-    <span class="text-[#8a9690]">Sincronizado:</span>
-    <span id="lastSync" class="text-[#2f3a35] font-medium">--</span>
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
+      <span class="w-1.5 h-1.5 rounded-full bg-orion-500"></span>
+      <span class="text-[#8a9690]">Sincronizado:</span>
+      <span id="lastSync" class="text-[#2f3a35] font-medium">--</span>
+    </div>
+    <div class="relative">
+      <button type="button" id="btnAjustes" class="btn-secondary !px-3 !py-2.5 flex items-center gap-2 text-xs" title="Ajustes de fecha">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span class="hidden sm:inline">Ajustes</span>
+      </button>
+      <div id="panelAjustes" class="settings-panel hidden">
+        <p class="settings-title">Rango de fechas</p>
+        <p class="settings-hint">Por defecto se muestra el dia de hoy. El historico se conserva siempre.</p>
+        <label class="settings-field">
+          <span>Desde</span>
+          <input type="date" id="ajDesde" class="inp !py-1.5 text-xs" />
+        </label>
+        <label class="settings-field">
+          <span>Hasta</span>
+          <input type="date" id="ajHasta" class="inp !py-1.5 text-xs" />
+        </label>
+        <div class="settings-quick">
+          <button type="button" class="chip" data-quick="hoy">Hoy</button>
+          <button type="button" class="chip" data-quick="7">7 dias</button>
+          <button type="button" class="chip" data-quick="30">30 dias</button>
+          <button type="button" class="chip" data-quick="mes">Este mes</button>
+          <button type="button" class="chip" data-quick="anio">Este año</button>
+        </div>
+        <div class="settings-actions">
+          <button type="button" id="btnAplicarRango" class="px-4 py-2 text-sm">Aplicar</button>
+          <button type="button" id="btnCerrarAjustes" class="btn-secondary px-3 py-2 text-sm">Cerrar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
+<div id="rangoActivo" class="mb-6 -mt-3 text-xs text-[#5c6b63]"></div>
 
 <!-- ====================== SECCION 1: KPIs ====================== -->
 <div class="section-header">
@@ -27,22 +59,22 @@
 <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
   <div class="kpi-card">
     <p class="kpi-label">Merma frio (mes)</p>
-    <p class="kpi-value text-cyan-300" id="kpiMermaProm">--</p>
+    <p class="kpi-value text-cyan-700" id="kpiMermaProm">--</p>
     <p class="kpi-extra">Lotes: <span id="kpiMermaLotes">--</span></p>
   </div>
   <div class="kpi-card">
     <p class="kpi-label">Tiempo merma frio (dias)</p>
-    <p class="kpi-value text-amber-300" id="kpiMermaDias">--</p>
+    <p class="kpi-value text-amber-600" id="kpiMermaDias">--</p>
     <p class="kpi-extra">Min/Max: <span id="kpiMermaDiasRange">--</span></p>
   </div>
   <div class="kpi-card">
     <p class="kpi-label">Tiempo produccion</p>
-    <p class="kpi-value text-fuchsia-300" id="kpiTiempoProd">--</p>
+    <p class="kpi-value text-fuchsia-700" id="kpiTiempoProd">--</p>
     <p class="kpi-extra" id="kpiTiempoProdRange">--</p>
   </div>
   <div class="kpi-card">
     <p class="kpi-label">PPTO Canales (mes)</p>
-    <p class="kpi-value text-emerald-300" id="kpiPpto">--</p>
+    <p class="kpi-value text-emerald-700" id="kpiPpto">--</p>
     <p class="kpi-extra">Meta <span id="kpiPptoMeta">--</span> · Ejec <span id="kpiPptoEjec">--</span></p>
   </div>
 </section>
@@ -60,13 +92,13 @@
 <section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
   <div class="card xl:col-span-2">
     <div class="flex items-center justify-between mb-4">
-      <p class="text-xs text-slate-400">Datos del año <span id="pptoYear" class="text-slate-200 font-semibold">--</span></p>
+      <p class="text-xs text-[#8a9690]">Datos del año <span id="pptoYear" class="text-[#2f3a35] font-semibold">--</span></p>
     </div>
     <div class="h-80"><canvas id="chartPpto"></canvas></div>
   </div>
   <div class="card">
-    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Cifras del mes</h3>
-    <p class="text-xs text-slate-500 mb-4">% Rendimiento y % Merma por seccion</p>
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Cifras del mes</h3>
+    <p class="text-xs text-[#8a9690] mb-4">% Rendimiento y % Merma por seccion</p>
     <div id="cifrasMes" class="space-y-3 text-sm"></div>
   </div>
 </section>
@@ -86,14 +118,14 @@
     <div class="h-72"><canvas id="chartVelocidad"></canvas></div>
   </div>
   <div class="card">
-    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Resumen del dia</h3>
-    <p class="text-xs text-slate-500 mb-4" id="resumenDiaFecha">--</p>
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Resumen del dia</h3>
+    <p class="text-xs text-[#8a9690] mb-4" id="resumenDiaFecha">--</p>
     <dl class="space-y-3 text-sm">
-      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Canales procesados</dt><dd id="resumenCanales" class="font-semibold text-white">--</dd></div>
-      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Kilos procesados</dt><dd id="resumenKilos" class="font-semibold text-white">--</dd></div>
-      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Velocidad canal/h</dt><dd id="resumenCanalH" class="font-semibold text-white">--</dd></div>
-      <div class="flex justify-between border-b border-slate-800 pb-2"><dt class="text-slate-400">Velocidad canal/hombre</dt><dd id="resumenCanalHH" class="font-semibold text-emerald-300">--</dd></div>
-      <div class="flex justify-between"><dt class="text-slate-400">Velocidad kg/h</dt><dd id="resumenKilosH" class="font-semibold text-white">--</dd></div>
+      <div class="flex justify-between border-b border-[#eef1ef] pb-2"><dt class="text-[#5c6b63]">Canales procesados</dt><dd id="resumenCanales" class="font-semibold text-[#2f3a35]">--</dd></div>
+      <div class="flex justify-between border-b border-[#eef1ef] pb-2"><dt class="text-[#5c6b63]">Kilos procesados</dt><dd id="resumenKilos" class="font-semibold text-[#2f3a35]">--</dd></div>
+      <div class="flex justify-between border-b border-[#eef1ef] pb-2"><dt class="text-[#5c6b63]">Velocidad canal/h</dt><dd id="resumenCanalH" class="font-semibold text-[#2f3a35]">--</dd></div>
+      <div class="flex justify-between border-b border-[#eef1ef] pb-2"><dt class="text-[#5c6b63]">Velocidad canal/hombre</dt><dd id="resumenCanalHH" class="font-bold text-orion-700">--</dd></div>
+      <div class="flex justify-between"><dt class="text-[#5c6b63]">Velocidad kg/h</dt><dd id="resumenKilosH" class="font-semibold text-[#2f3a35]">--</dd></div>
     </dl>
   </div>
 </section>
@@ -110,21 +142,21 @@
 </div>
 <section class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-2">
   <div class="card xl:col-span-1">
-    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Paradas por categoria</h3>
-    <p class="text-xs text-slate-500 mb-4" id="paradasRangoLabel">--</p>
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Paradas por categoria</h3>
+    <p class="text-xs text-[#8a9690] mb-4" id="paradasRangoLabel">--</p>
     <div class="h-72"><canvas id="chartParadas"></canvas></div>
   </div>
   <div class="card xl:col-span-2">
-    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-slate-300">Tendencia diaria</h3>
-    <p class="text-xs text-slate-500 mb-4">Total minutos por dia (ultimos 60 dias con datos)</p>
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Tendencia diaria</h3>
+    <p class="text-xs text-[#8a9690] mb-4">Total minutos por dia (ultimos 60 dias con datos)</p>
     <div class="h-72"><canvas id="chartParadasTendencia"></canvas></div>
   </div>
 </section>
 
 <section class="card mb-4">
   <div class="flex items-center justify-between mb-3">
-    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-300">Tabla de paradas recientes</h3>
-    <p class="text-xs text-slate-500">Ultimos 15 dias con registros</p>
+    <h3 class="text-sm font-bold uppercase tracking-wide text-[#2f3a35]">Tabla de paradas recientes</h3>
+    <p class="text-xs text-[#8a9690]">Ultimos 15 dias con registros</p>
   </div>
   <div class="overflow-x-auto">
     <table class="orion-table">
@@ -144,5 +176,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=3"></script>
 {% endblock %}

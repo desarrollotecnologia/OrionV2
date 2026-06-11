@@ -644,6 +644,63 @@ button[type="submit"]:not(.btn-secondary):not(.btn-danger):hover {
 .hist-row { cursor: pointer; }
 .hist-row:hover td { background: var(--cb-green-soft); }
 
+/* Panel de ajustes (rango de fechas) */
+.settings-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  width: 270px;
+  background: #fff;
+  border: 1px solid var(--cb-border);
+  border-radius: 0.7rem;
+  box-shadow: 0 16px 40px rgba(31, 41, 36, 0.18);
+  padding: 1rem;
+  animation: modalIn .12s ease-out;
+}
+.settings-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cb-text);
+  margin: 0;
+}
+.settings-hint {
+  font-size: 0.7rem;
+  color: var(--cb-muted);
+  margin: 0.2rem 0 0.75rem;
+  line-height: 1.4;
+}
+.settings-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.settings-field > span {
+  font-size: 0.75rem;
+  color: var(--cb-text-soft);
+  font-weight: 500;
+}
+.settings-field .inp { width: 9.5rem; }
+.settings-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0.85rem;
+}
+.settings-quick .chip { cursor: pointer; font-size: 0.7rem; }
+.settings-quick .chip:hover {
+  border-color: var(--cb-green);
+  color: var(--cb-green-dark);
+  background: var(--cb-green-soft);
+}
+.settings-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 /* Modal detalle de proyeccion */
 .modal-overlay {
   position: fixed;

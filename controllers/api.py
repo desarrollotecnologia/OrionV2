@@ -81,24 +81,36 @@ def sync_last():
 
 # -------- Dashboard --------
 
+def _rango_fechas():
+    """Lee desde/hasta de la query. Por defecto: dia de hoy. Devuelve (desde, hasta)."""
+    hoy = date.today().isoformat()
+    desde = (request.args.get("desde") or "").strip() or hoy
+    hasta = (request.args.get("hasta") or "").strip() or hoy
+    if desde > hasta:
+        desde, hasta = hasta, desde
+    return desde, hasta
+
+
 @bp.route("/dashboard")
 @login_required
 def dashboard_data():
+    desde, hasta = _rango_fechas()
     header = indicadores_model.get_header() or {}
     ppto = ppto_model.serie_anio()
     ppto_kpi = ppto_model.kpi_actual()
     merma_kpi = merma_model.kpi_actual()
     merma_dias = merma_model.tiempo_promedio_dias()
     tiempo_dia = tiempo_model.tiempo_total_dia()
-    base_dia = base_datos_model.resumen_dia()
-    velocidades = base_datos_model.velocidad_por_proceso()
-    paradas_categoria = paradas_model.total_por_categoria()
-    paradas_tendencia = paradas_model.tendencia_diaria()
-    paradas_recientes = paradas_model.recientes(15)
+    base_dia = base_datos_model.resumen_dia(desde, hasta)
+    velocidades = base_datos_model.velocidad_por_proceso(desde=desde, hasta=hasta)
+    paradas_categoria = paradas_model.total_por_categoria(desde=desde, hasta=hasta)
+    paradas_tendencia = paradas_model.tendencia_diaria(desde=desde, hasta=hasta)
+    paradas_recientes = paradas_model.recientes(15, desde=desde, hasta=hasta)
     paradas_ultima_fecha = paradas_model._ultima_fecha()
     cifras_mes = indicadores_model.get_cifras_mes()
 
     return jsonify({
+        "rango": {"desde": desde, "hasta": hasta},
         "header": header,
         "ppto": _serialize_rows(ppto),
         "ppto_kpi": _serialize(ppto_kpi),
