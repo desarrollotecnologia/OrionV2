@@ -97,7 +97,7 @@
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">
               <div class="w-24 h-1.5 bg-slate-800 rounded">
-                <div class="h-1.5 bg-orion-500 rounded" style="width:${Math.min(100, pct)}%"></div>
+                <div class="h-1.5 bg-gradient-to-r from-beef-600 to-orion-600 rounded" style="width:${Math.min(100, pct)}%"></div>
               </div>
               <span class="text-slate-300 text-xs w-12 text-right">${pct.toFixed(1)}%</span>
             </div>

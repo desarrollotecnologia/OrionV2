@@ -31,12 +31,12 @@
     const t = document.getElementById('toast');
     if (!t) return;
     const colors = {
-      info:    'border-orion-500 text-orion-200',
-      ok:      'border-emerald-500 text-emerald-200',
-      warn:    'border-amber-400 text-amber-200',
-      error:   'border-red-500 text-red-200'
+      info:    'border-orion-600 text-green-800 bg-white',
+      ok:      'border-orion-600 text-green-800 bg-green-50',
+      warn:    'border-amber-400 text-amber-900 bg-amber-50',
+      error:   'border-beef-600 text-red-800 bg-red-50'
     };
-    t.className = `fixed top-6 right-6 z-50 bg-slate-900 border ${colors[kind] || colors.info} px-4 py-3 rounded-xl shadow-xl text-sm show`;
+    t.className = `fixed top-6 right-6 z-50 border px-4 py-3 rounded-xl shadow-xl text-sm show ${colors[kind] || colors.info}`;
     t.textContent = msg;
     clearTimeout(t._timer);
     t._timer = setTimeout(() => { t.classList.add('hidden'); t.classList.remove('show'); }, 3500);
