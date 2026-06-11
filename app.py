@@ -136,6 +136,7 @@ def create_app() -> tuple[Flask, SocketIO]:
         app,
         async_mode="threading",
         cors_allowed_origins="*",
+        allow_upgrades=False,
         logger=False,
         engineio_logger=False,
     )

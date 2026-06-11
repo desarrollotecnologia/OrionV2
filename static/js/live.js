@@ -11,7 +11,9 @@
   };
 
   const Live = window.OrionLive;
-  const socket = io('/live', { transports: ['websocket', 'polling'] });
+  // El servidor corre en modo threading (sin WebSocket). Forzamos polling
+  // y desactivamos el upgrade para evitar errores 500 al intentar websocket.
+  const socket = io('/live', { transports: ['polling'], upgrade: false });
 
   function setStamp() {
     const el = document.getElementById('liveTimestamp');
