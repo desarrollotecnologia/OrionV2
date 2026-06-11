@@ -641,6 +641,8 @@ button[type="submit"]:not(.btn-secondary):not(.btn-danger):hover {
   border-color: var(--cb-green);
   color: var(--cb-green-dark);
 }
+.hist-row { cursor: pointer; }
+.hist-row:hover td { background: var(--cb-green-soft); }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #d1d9d4; border-radius: 6px; }

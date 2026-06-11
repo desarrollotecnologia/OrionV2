@@ -8,7 +8,7 @@ from __future__ import annotations
 import time
 from datetime import date, datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 
 from controllers.auth import login_required
 from models import (
@@ -22,6 +22,7 @@ from models import (
     sync_log as sync_log_model,
     tablero_ind as tablero_model,
     tiempo_produccion as tiempo_model,
+    proyeccion as proyeccion_model,
 )
 from services.excel_importer import import_all
 from services import live as live_bus
@@ -238,6 +239,38 @@ def proyeccion_options():
         "clientes": base_datos_model.clientes(),
         "velocidades": _serialize_rows(base_datos_model.velocidades_por_cliente()),
     })
+
+
+@bp.route("/proyeccion", methods=["GET", "POST"])
+@login_required
+def proyeccion_historico():
+    if request.method == "GET":
+        return jsonify({
+            "ok": True,
+            "proyecciones": _serialize_rows(proyeccion_model.listar(60)),
+        })
+    payload = request.get_json(silent=True) or {}
+    try:
+        guardada = proyeccion_model.crear(payload, session.get("user_name"))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "proyeccion": _serialize_rows([guardada])[0]})
+
+
+@bp.route("/proyeccion/<int:proy_id>")
+@login_required
+def proyeccion_detalle(proy_id: int):
+    row = proyeccion_model.obtener(proy_id)
+    if not row:
+        return jsonify({"ok": False, "error": "No existe la proyeccion"}), 404
+    return jsonify({"ok": True, "proyeccion": _serialize_rows([row])[0]})
+
+
+@bp.route("/proyeccion/<int:proy_id>", methods=["DELETE"])
+@login_required
+def proyeccion_eliminar(proy_id: int):
+    n = proyeccion_model.eliminar(proy_id)
+    return jsonify({"ok": bool(n), "eliminados": n})
 
 
 @bp.route("/captura/base-datos", methods=["POST"])

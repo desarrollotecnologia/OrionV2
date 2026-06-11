@@ -7,9 +7,17 @@
     <h1 class="page-title">Tiempos proyectados de desposte</h1>
     <p class="page-subtitle">Proyecta el turno: ingresa clientes, canales y operarios. El sistema calcula velocidades, tiempo estimado y el horario del turno usando las velocidades historicas reales.</p>
   </div>
-  <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
-    <label class="text-[#8a9690]" for="proyFecha">Fecha proyeccion</label>
-    <input type="date" id="proyFecha" class="inp !py-1 !px-2 !w-auto text-xs" />
+  <div class="flex flex-wrap items-end gap-3">
+    <div>
+      <label class="lbl" for="proyTitulo">Titulo / nota</label>
+      <input type="text" id="proyTitulo" class="inp !py-1.5 text-xs" placeholder="Ej. Turno desposte bovino" />
+    </div>
+    <div>
+      <label class="lbl" for="proyFecha">Fecha</label>
+      <input type="date" id="proyFecha" class="inp !py-1.5 !w-auto text-xs" />
+    </div>
+    <button type="button" id="btnGuardarProy" class="px-5 py-2 text-sm">Guardar</button>
+    <button type="button" id="btnNuevaProy" class="btn-secondary px-4 py-2 text-sm">Nueva</button>
   </div>
 </header>
 
@@ -122,9 +130,38 @@
   </div>
 </section>
 
+<!-- ===== HISTORICO ===== -->
+<section class="card mt-6">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="proy-title">Historico de proyecciones</h2>
+      <p class="hint mb-0">Click en una fila para cargarla en la calculadora.</p>
+    </div>
+    <span class="text-xs text-[#8a9690]">Registros: <span id="histCount">--</span></span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Titulo</th>
+        <th class="text-right">Canales</th>
+        <th class="text-right">Operarios</th>
+        <th>Inicio</th>
+        <th>Salida</th>
+        <th>Duracion</th>
+        <th>Planta</th>
+        <th class="text-center">Comidas</th>
+        <th>Creado por</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="tbodyHistorico"></tbody>
+    </table>
+  </div>
+</section>
+
 <datalist id="clientesList"></datalist>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=2"></script>
 {% endblock %}

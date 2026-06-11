@@ -146,6 +146,176 @@
     elCom.classList.toggle("badge-comida-si", comidas === "SI");
   }
 
+  // ---------- Guardar / cargar / historico ----------
+  function recolectarEstado() {
+    const desposte = [];
+    $("tbodyDesposte").querySelectorAll("tr").forEach(tr => {
+      const cli = tr.querySelector(".f-cli").value.trim();
+      const canales = num(tr.querySelector(".f-canales"));
+      const operarios = num(tr.querySelector(".f-operarios"));
+      const velh = num(tr.querySelector(".f-velh"));
+      if (!cli && !canales && !velh) return;
+      desposte.push({
+        cliente: cli,
+        tipo: tr.querySelector(".f-tipo").value || null,
+        canales, operarios, vel_canal_h: velh,
+        vel_canal_hh: tr.querySelector(".f-velhh").textContent,
+        tiempo: tr.querySelector(".f-tiempo").textContent,
+      });
+    });
+    const porcionado = [];
+    $("tbodyPorcionado").querySelectorAll("tr").forEach(tr => {
+      const cli = tr.querySelector(".f-cli").value.trim();
+      const kg = num(tr.querySelector(".f-kg"));
+      const operarios = num(tr.querySelector(".f-operarios"));
+      const velhh = num(tr.querySelector(".f-velhh"));
+      if (!cli && !kg && !velhh) return;
+      porcionado.push({
+        cliente: cli, cant_kg: kg, operarios, vel_kg_hh: velhh,
+        tiempo: tr.querySelector(".f-tiempo").textContent,
+      });
+    });
+    return {
+      fecha: $("proyFecha").value,
+      titulo: $("proyTitulo").value,
+      hora_inicio: $("igHoraInicio").value,
+      descanso: $("igDescanso").value,
+      parada: $("igParada").value,
+      duracion: $("igDuracion").textContent,
+      salida: $("igSalida").textContent,
+      tiempo_planta: $("igPlanta").textContent,
+      aplica_comidas: $("igComidas").textContent,
+      total_canales: $("totDespCanales").textContent,
+      total_operarios: $("totDespOperarios").textContent,
+      total_tiempo: $("totDespTiempo").textContent,
+      desposte, porcionado,
+    };
+  }
+
+  function guardarProyeccion() {
+    const estado = recolectarEstado();
+    if (!estado.desposte.length && !estado.porcionado.length) {
+      Live.toast("Agrega al menos una fila con datos", "warn");
+      return;
+    }
+    fetch("/api/proyeccion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(estado),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          Live.toast("Proyeccion guardada", "ok");
+          cargarHistorico();
+        } else {
+          Live.toast(data.error || "No se pudo guardar", "error");
+        }
+      })
+      .catch(() => Live.toast("Fallo la peticion", "error"));
+  }
+
+  function limpiarTabla(tbody) { tbody.innerHTML = ""; }
+
+  function nuevaProyeccion() {
+    limpiarTabla($("tbodyDesposte"));
+    limpiarTabla($("tbodyPorcionado"));
+    $("proyTitulo").value = "";
+    $("proyFecha").value = new Date().toISOString().slice(0, 10);
+    $("igHoraInicio").value = "09:00";
+    $("igDescanso").value = "01:00";
+    $("igParada").value = "00:00";
+    $("tbodyDesposte").appendChild(nuevaFilaDesposte());
+    $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
+    recalc();
+  }
+
+  function cargarProyeccion(id) {
+    Live.fetchJSON(`/api/proyeccion/${id}`).then(data => {
+      if (!data.ok) { Live.toast("No se encontro", "error"); return; }
+      const p = data.proyeccion;
+      $("proyTitulo").value = p.titulo || "";
+      $("proyFecha").value = (p.fecha || "").slice(0, 10);
+      $("igHoraInicio").value = p.hora_inicio || "09:00";
+      $("igDescanso").value = p.descanso || "01:00";
+      $("igParada").value = p.parada || "00:00";
+      limpiarTabla($("tbodyDesposte"));
+      (p.desposte || []).forEach(row => {
+        const tr = nuevaFilaDesposte();
+        tr.querySelector(".f-cli").value = row.cliente || "";
+        if (row.tipo != null) tr.querySelector(".f-tipo").value = row.tipo;
+        tr.querySelector(".f-canales").value = row.canales || "";
+        tr.querySelector(".f-operarios").value = row.operarios || "";
+        tr.querySelector(".f-velh").value = row.vel_canal_h || "";
+        tr.querySelector(".f-velh").dataset.auto = "0";
+        $("tbodyDesposte").appendChild(tr);
+      });
+      if (!(p.desposte || []).length) $("tbodyDesposte").appendChild(nuevaFilaDesposte());
+      limpiarTabla($("tbodyPorcionado"));
+      (p.porcionado || []).forEach(row => {
+        const tr = nuevaFilaPorcionado();
+        tr.querySelector(".f-cli").value = row.cliente || "";
+        tr.querySelector(".f-kg").value = row.cant_kg || "";
+        tr.querySelector(".f-operarios").value = row.operarios || "";
+        tr.querySelector(".f-velhh").value = row.vel_kg_hh || "";
+        $("tbodyPorcionado").appendChild(tr);
+      });
+      if (!(p.porcionado || []).length) $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
+      recalc();
+      Live.toast("Proyeccion cargada", "ok");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  function eliminarProyeccion(id) {
+    fetch(`/api/proyeccion/${id}`, { method: "DELETE", credentials: "same-origin" })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) { Live.toast("Proyeccion eliminada", "ok"); cargarHistorico(); }
+        else Live.toast("No se pudo eliminar", "error");
+      });
+  }
+
+  function cargarHistorico() {
+    return Live.fetchJSON("/api/proyeccion").then(data => {
+      const rows = data.proyecciones || [];
+      $("histCount").textContent = rows.length;
+      const tb = $("tbodyHistorico");
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="11" class="text-center text-slate-500 py-4">Aun no hay proyecciones guardadas</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(r => `
+        <tr data-id="${r.id}" class="hist-row">
+          <td>${Live.fmt.date(r.fecha)}</td>
+          <td class="truncate max-w-[200px]" title="${r.titulo || ''}">${r.titulo || '--'}</td>
+          <td class="text-right">${r.total_canales ?? '--'}</td>
+          <td class="text-right">${r.total_operarios ?? '--'}</td>
+          <td>${r.hora_inicio || '--'}</td>
+          <td>${r.salida || '--'}</td>
+          <td>${r.duracion || '--'}</td>
+          <td>${r.tiempo_planta || '--'}</td>
+          <td class="text-center">${r.aplica_comidas || '--'}</td>
+          <td class="truncate max-w-[140px]" title="${r.creado_por || ''}">${r.creado_por || '--'}</td>
+          <td class="text-center"><button type="button" class="row-del hist-del" data-id="${r.id}" title="Eliminar">&times;</button></td>
+        </tr>
+      `).join("");
+      tb.querySelectorAll(".hist-row").forEach(tr => {
+        tr.addEventListener("click", (e) => {
+          if (e.target.classList.contains("hist-del")) return;
+          cargarProyeccion(tr.getAttribute("data-id"));
+        });
+      });
+      tb.querySelectorAll(".hist-del").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          eliminarProyeccion(btn.getAttribute("data-id"));
+        });
+      });
+    }).catch(() => {});
+  }
+
   // ---------- Carga inicial ----------
   function cargarOpciones() {
     return Live.fetchJSON("/api/proyeccion/options").then(data => {
@@ -166,6 +336,7 @@
       $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
       recalc();
     });
+    cargarHistorico();
 
     $("btnAddDesposte").addEventListener("click", () => {
       $("tbodyDesposte").appendChild(nuevaFilaDesposte());
@@ -173,6 +344,8 @@
     $("btnAddPorcionado").addEventListener("click", () => {
       $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
     });
+    $("btnGuardarProy").addEventListener("click", guardarProyeccion);
+    $("btnNuevaProy").addEventListener("click", nuevaProyeccion);
     ["igHoraInicio", "igDescanso", "igParada"].forEach(id => {
       $(id).addEventListener("input", recalc);
     });

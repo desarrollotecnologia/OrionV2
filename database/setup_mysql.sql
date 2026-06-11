@@ -229,6 +229,27 @@ CREATE TABLE IF NOT EXISTS cargos (
     INDEX idx_cargo (cargo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS proyecciones (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    fecha           DATE         NOT NULL,
+    titulo          VARCHAR(160) NULL,
+    hora_inicio     VARCHAR(8)   NULL,
+    descanso        VARCHAR(8)   NULL,
+    parada          VARCHAR(8)   NULL,
+    duracion        VARCHAR(8)   NULL,
+    salida          VARCHAR(8)   NULL,
+    tiempo_planta   VARCHAR(8)   NULL,
+    aplica_comidas  VARCHAR(3)   NULL,
+    total_canales   INT          NULL,
+    total_operarios INT          NULL,
+    total_tiempo    VARCHAR(8)   NULL,
+    desposte        JSON         NULL,
+    porcionado      JSON         NULL,
+    creado_por      VARCHAR(150) NULL,
+    creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_fecha (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS sync_log (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     sincronizado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

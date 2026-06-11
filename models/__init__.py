@@ -9,6 +9,7 @@ from . import (
     reporte_oper,
     paradas,
     tiempo_produccion,
+    proyeccion,
     cargos,
     sync_log,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "reporte_oper",
     "paradas",
     "tiempo_produccion",
+    "proyeccion",
     "cargos",
     "sync_log",
 ]
