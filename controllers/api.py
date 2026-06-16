@@ -23,7 +23,9 @@ from models import (
     tablero_ind as tablero_model,
     tiempo_produccion as tiempo_model,
     proyeccion as proyeccion_model,
+    usabilidad as usabilidad_model,
 )
+from config import config
 from services.excel_importer import import_all
 from services import live as live_bus
 
@@ -48,12 +50,43 @@ def _serialize_rows(rows):
     return out
 
 
+def _usab_allow() -> bool:
+    return bool(session.get("usab_unlock") is True)
+
+
 # -------- Endpoints generales --------
 
 @bp.route("/health")
 @login_required
 def health():
     return jsonify({"ok": True, "ts": datetime.now().isoformat(timespec="seconds")})
+
+
+@bp.route("/usabilidad/unlock", methods=["POST"])
+@login_required
+def usabilidad_unlock():
+    if session.get("user_role") != "admin":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    cmd = (payload.get("cmd") or "").strip()
+    if not cmd or cmd != config.USABILITY_DASH_CMD:
+        return jsonify({"ok": False, "error": "Comando invalido"}), 400
+    session["usab_unlock"] = True
+    return jsonify({"ok": True, "url": "/_hidden/usabilidad"})
+
+
+@bp.route("/usabilidad/data")
+@login_required
+def usabilidad_data():
+    if session.get("user_role") != "admin" or not _usab_allow():
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
+    return jsonify({
+        "ok": True,
+        "resumen": _serialize(usabilidad_model.resumen()),
+        "capturas_diarias": _serialize_rows(usabilidad_model.capturas_diarias_30d()),
+        "sync_diarias": _serialize_rows(usabilidad_model.sync_diarias_30d()),
+        "actividad_usuario": _serialize_rows(usabilidad_model.actividad_usuario_30d()),
+    })
 
 
 @bp.route("/sync", methods=["POST"])

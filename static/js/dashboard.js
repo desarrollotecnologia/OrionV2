@@ -321,6 +321,28 @@
     hasta.value = r.hasta;
 
     btn.addEventListener('click', (e) => {
+      if (e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const cmd = window.prompt('Comando de apertura (interno):');
+        if (!cmd) return;
+        fetch('/api/usabilidad/unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ cmd }),
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.ok && data.url) {
+              window.location.href = data.url;
+            } else {
+              Live.toast(data.error || 'Comando invalido', 'error');
+            }
+          })
+          .catch(() => Live.toast('No se pudo validar el comando', 'error'));
+        return;
+      }
       e.stopPropagation();
       panel.classList.toggle('hidden');
     });

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Usabilidad interna · Cut Beef{% endblock %}
+{% block content %}
+<header class="flex items-end justify-between gap-4 mb-8">
+  <div>
+    <p class="page-eyebrow">Interno</p>
+    <h1 class="page-title">Dashboard de usabilidad</h1>
+    <p class="page-subtitle">Vista oculta para seguimiento de adopcion y uso del aplicativo.</p>
+  </div>
+  <a href="{{ url_for('dashboard.index') }}" class="btn-secondary px-4 py-2 text-sm">Volver</a>
+</header>
+
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="kpi-card"><p class="kpi-label">Usuarios activos</p><p id="uUsuarios" class="kpi-value">--</p></div>
+  <div class="kpi-card"><p class="kpi-label">Syncs 7 dias</p><p id="uSync" class="kpi-value">--</p></div>
+  <div class="kpi-card"><p class="kpi-label">Capturas BD 7 dias</p><p id="uCapBD" class="kpi-value">--</p></div>
+  <div class="kpi-card"><p class="kpi-label">Proyecciones 7 dias</p><p id="uProy" class="kpi-value">--</p></div>
+</section>
+
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3">Capturas manuales (30 dias)</h3>
+    <div class="h-72"><canvas id="uChartCap"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-3">Sincronizaciones (30 dias)</h3>
+    <div class="h-72"><canvas id="uChartSync"></canvas></div>
+  </div>
+</section>
+
+<section class="card mt-6">
+  <h3 class="text-sm font-bold mb-3">Actividad por usuario (proyecciones 30 dias)</h3>
+  <div class="overflow-x-auto">
+    <table class="orion-table">
+      <thead><tr><th>Usuario</th><th class="text-right">Total</th></tr></thead>
+      <tbody id="uTablaUsuarios"></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/usabilidad.js') }}?v=1"></script>
+{% endblock %}
