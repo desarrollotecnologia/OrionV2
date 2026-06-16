@@ -154,14 +154,23 @@ def _calc_velocidades(
 def _hhmmss_to_seconds(value: str | None) -> int | None:
     if not value:
         return None
-    parts = value.split(":")
+    s = str(value).strip().replace(",", ".")
+    if not s:
+        return None
+    if ":" not in s:
+        try:
+            horas = float(s)
+            return max(int(round(horas * 3600)), 0) if horas >= 0 else None
+        except ValueError:
+            return None
+    parts = s.split(":")
     try:
         if len(parts) == 2:
             h, m = int(parts[0]), int(parts[1])
             return h * 3600 + m * 60
         if len(parts) == 3:
-            h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
-            return h * 3600 + m * 60 + s
+            h, m, sec = int(parts[0]), int(parts[1]), int(parts[2])
+            return h * 3600 + m * 60 + sec
     except ValueError:
         return None
     return None

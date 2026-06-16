@@ -20,7 +20,7 @@
   // ----- Defaults -----
   function hoyISO() { return new Date().toISOString().slice(0, 10); }
   fecha.value = hoyISO();
-  reposo.value = "00:00:00";
+  reposo.value = "0:00";
 
   function actualizarMesAnioHint() {
     if (!fecha.value) { mesAnioHint.textContent = ""; return; }
@@ -99,6 +99,23 @@
   }
 
   // ----- Calculo de tiempo total y velocidades -----
+  function duracionToSec(s) {
+    if (!s) return 0;
+    const txt = String(s).trim().replace(",", ".");
+    if (!txt) return 0;
+    if (txt.includes(":")) {
+      const p = txt.split(":");
+      const h = parseInt(p[0], 10) || 0;
+      const m = parseInt(p[1], 10) || 0;
+      const sec = p.length >= 3 ? (parseInt(p[2], 10) || 0) : 0;
+      return h * 3600 + m * 60 + sec;
+    }
+    const horas = parseFloat(txt);
+    return isFinite(horas) ? Math.round(horas * 3600) : 0;
+  }
+  function duracionToHHMMSS(s) {
+    return secToHHMMSS(duracionToSec(s));
+  }
   function hhmmssToSec(s) {
     if (!s) return null;
     const p = s.split(":").map(n => parseInt(n, 10));
@@ -127,7 +144,7 @@
   function recalcular() {
     const ini = hhmmssToSec(hi.value);
     const fin = hhmmssToSec(hf.value);
-    const rep = hhmmssToSec(reposo.value) || 0;
+    const rep = duracionToSec(reposo.value);
     let totalSeg = null;
     if (ini != null && fin != null) {
       let d = fin - ini;
@@ -183,7 +200,7 @@
       kilos: kilos.value || null,
       hora_inicio: hi.value || null,
       hora_fin: hf.value || null,
-      tiempo_reposo: reposo.value || "00:00:00",
+      tiempo_reposo: duracionToHHMMSS(reposo.value) || "00:00:00",
     };
 
     const btn = $("btnGuardar");
