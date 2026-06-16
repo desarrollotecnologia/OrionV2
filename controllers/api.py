@@ -141,6 +141,7 @@ def dashboard_data():
     paradas_recientes = paradas_model.recientes(15, desde=desde, hasta=hasta)
     paradas_ultima_fecha = paradas_model._ultima_fecha()
     cifras_mes = indicadores_model.get_cifras_mes()
+    proyeccion_clientes = proyeccion_model.resumen_por_cliente(desde, hasta)
 
     return jsonify({
         "rango": {"desde": desde, "hasta": hasta},
@@ -157,6 +158,7 @@ def dashboard_data():
         "paradas_recientes": _serialize_rows(paradas_recientes),
         "paradas_ultima_fecha": _serialize(paradas_ultima_fecha),
         "cifras_mes": _serialize_rows(cifras_mes),
+        "proyeccion_clientes": _serialize_rows(proyeccion_clientes),
         "ultima_sync": _serialize(sync_log_model.ultimo()),
     })
 

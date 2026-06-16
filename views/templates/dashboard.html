@@ -173,8 +173,31 @@
     </table>
   </div>
 </section>
+
+<!-- ====================== SECCION 5: Proyecciones ====================== -->
+<div class="section-header">
+  <div class="icon">5</div>
+  <div class="text">
+    <h2>Proyeccion por cliente</h2>
+    <p>Vista de productividad y carga estimada en desposte</p>
+  </div>
+  <div class="line"></div>
+  <span class="badge">Vistas</span>
+</div>
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
+  <div class="card">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Canal/hombre proyectado</h3>
+    <p class="text-xs text-[#8a9690] mb-4">Promedio por cliente según histórico de proyecciones</p>
+    <div class="h-72"><canvas id="chartProyCanalHH"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 class="text-sm font-bold mb-1 uppercase tracking-wide text-[#2f3a35]">Carga operativa proyectada</h3>
+    <p class="text-xs text-[#8a9690] mb-4">Canales promedio por cliente en proyecciones guardadas</p>
+    <div class="h-72"><canvas id="chartProyCanales"></canvas></div>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=5"></script>
 {% endblock %}

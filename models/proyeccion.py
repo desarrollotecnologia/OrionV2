@@ -83,3 +83,24 @@ def obtener(proy_id: int) -> dict[str, Any] | None:
 
 def eliminar(proy_id: int) -> int:
     return db.execute("DELETE FROM proyecciones WHERE id=%s", (proy_id,))
+
+
+def resumen_por_cliente(desde: str | None = None, hasta: str | None = None) -> list[dict[str, Any]]:
+    where = ""
+    params: list[Any] = []
+    if desde and hasta:
+        where = "WHERE fecha BETWEEN %s AND %s"
+        params.extend([desde, hasta])
+    return db.fetch_all(
+        "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(jt.item, '$.cliente')), 'SIN CLIENTE') AS cliente, "
+        "       AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(jt.item, '$.vel_canal_hh')) AS DECIMAL(10,2))) AS canal_hh, "
+        "       AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(jt.item, '$.canales')) AS DECIMAL(10,2))) AS canales, "
+        "       AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(jt.item, '$.operarios')) AS DECIMAL(10,2))) AS operarios, "
+        "       COUNT(*) AS registros "
+        "FROM proyecciones p "
+        "JOIN JSON_TABLE(p.desposte, '$[*]' COLUMNS(item JSON PATH '$')) AS jt "
+        + where + " "
+        "GROUP BY COALESCE(JSON_UNQUOTE(JSON_EXTRACT(jt.item, '$.cliente')), 'SIN CLIENTE') "
+        "ORDER BY registros DESC, cliente ASC",
+        tuple(params),
+    )

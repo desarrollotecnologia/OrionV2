@@ -117,6 +117,24 @@
     else charts.parTrend = new Chart(document.getElementById('chartParadasTendencia'), { type: 'line', data, options: baseLine });
   }
 
+  function buildProyeccionClientes(rows) {
+    const labels = rows.map(r => r.cliente || 'SIN CLIENTE');
+    const hh = rows.map(r => r.canal_hh || 0);
+    const canales = rows.map(r => r.canales || 0);
+    const dataHH = {
+      labels,
+      datasets: [{ label: 'Canal/hombre', data: hh, backgroundColor: palette.canalHH, borderRadius: 8 }]
+    };
+    const dataCanales = {
+      labels,
+      datasets: [{ label: 'Canales promedio', data: canales, backgroundColor: palette.ejec, borderRadius: 8 }]
+    };
+    if (charts.proyHH) { charts.proyHH.data = dataHH; charts.proyHH.update(); }
+    else charts.proyHH = new Chart(document.getElementById('chartProyCanalHH'), { type: 'bar', data: dataHH, options: baseLine });
+    if (charts.proyCanales) { charts.proyCanales.data = dataCanales; charts.proyCanales.update(); }
+    else charts.proyCanales = new Chart(document.getElementById('chartProyCanales'), { type: 'bar', data: dataCanales, options: baseLine });
+  }
+
   function renderCifras(rows) {
     const cont = document.getElementById('cifrasMes');
     if (!cont) return;
@@ -260,6 +278,7 @@
     renderParadasRango(data.paradas_ultima_fecha);
     renderCifras(data.cifras_mes || []);
     renderResumenDia(data);
+    buildProyeccionClientes(data.proyeccion_clientes || []);
     renderLastSync(data);
     Live.flash('.kpi-card');
   }
