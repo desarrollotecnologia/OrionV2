@@ -2,6 +2,7 @@
 (function () {
   const Live = window.OrionLive;
   const $ = (id) => document.getElementById(id);
+  const charts = {};
 
   // velocidades[cliente] = { canal_h, canal_hh, kilos_h, operarios_prom }
   let velocidades = {};
@@ -42,6 +43,28 @@
     const v = parseFloat(el.value);
     return isFinite(v) ? v : 0;
   };
+
+  function drawBarChart(key, canvasId, labels, values, label, color) {
+    const data = {
+      labels,
+      datasets: [{ label, data: values, backgroundColor: color, borderRadius: 8 }],
+    };
+    const opts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#2f3a35' } } },
+      scales: {
+        x: { ticks: { color: '#5c6b63' }, grid: { color: 'rgba(47,58,53,0.08)' } },
+        y: { ticks: { color: '#5c6b63' }, grid: { color: 'rgba(47,58,53,0.08)' } },
+      },
+    };
+    if (charts[key]) {
+      charts[key].data = data;
+      charts[key].update();
+      return;
+    }
+    charts[key] = new Chart(document.getElementById(canvasId), { type: 'bar', data, options: opts });
+  }
 
   // ---------- Filas DESPOSTE ----------
   function buscarVel(cliente) {
@@ -98,7 +121,10 @@
   function recalc() {
     // ----- Desposte -----
     let sumCanales = 0, maxOperarios = 0, sumMin = 0, sumVelH = 0, sumVelHH = 0, nVel = 0;
+    const chartTiempo = [];
+    const chartCanalHH = [];
     $("tbodyDesposte").querySelectorAll("tr").forEach(tr => {
+      const cli = (tr.querySelector(".f-cli").value || "").trim() || "SIN CLIENTE";
       const canales = num(tr.querySelector(".f-canales"));
       const operarios = num(tr.querySelector(".f-operarios"));
       const velh = num(tr.querySelector(".f-velh"));
@@ -110,12 +136,31 @@
       if (operarios > maxOperarios) maxOperarios = operarios;
       sumMin += horas * 60;
       if (velh > 0) { sumVelH += velh; sumVelHH += velhh; nVel++; }
+      if (horas > 0) chartTiempo.push({ cliente: cli, minutos: Math.round(horas * 60) });
+      if (velhh > 0) chartCanalHH.push({ cliente: cli, valor: Number(velhh.toFixed(2)) });
     });
     $("totDespCanales").textContent = Math.round(sumCanales);
     $("totDespOperarios").textContent = maxOperarios;
     $("totDespVelH").textContent = fmtNum(nVel ? sumVelH / nVel : 0);
     $("totDespVelHH").textContent = fmtNum(nVel ? sumVelHH / nVel : 0);
     $("totDespTiempo").textContent = minToHM(sumMin);
+
+    drawBarChart(
+      "tiempo",
+      "chartProyTiempo",
+      chartTiempo.map(x => x.cliente),
+      chartTiempo.map(x => x.minutos),
+      "Minutos estimados",
+      "#8f5560"
+    );
+    drawBarChart(
+      "canalhh",
+      "chartProyCanalHH",
+      chartCanalHH.map(x => x.cliente),
+      chartCanalHH.map(x => x.valor),
+      "Canal/hombre",
+      "#4a6f56"
+    );
 
     // ----- Porcionado -----
     let pKg = 0, pMaxOp = 0, pMin = 0, pSumVel = 0, pN = 0;

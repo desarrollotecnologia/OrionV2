@@ -100,6 +100,20 @@
   </aside>
 </section>
 
+<!-- ===== GRAFICAS EN VIVO ===== -->
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+  <div class="card">
+    <h2 class="proy-title">Tiempo estimado por cliente</h2>
+    <p class="hint mb-3">Sale de las filas actuales de desposte (h:mm en minutos).</p>
+    <div class="h-72"><canvas id="chartProyTiempo"></canvas></div>
+  </div>
+  <div class="card">
+    <h2 class="proy-title">Canal / hombre por cliente</h2>
+    <p class="hint mb-3">Comparativo de productividad por operario para las filas del turno.</p>
+    <div class="h-72"><canvas id="chartProyCanalHH"></canvas></div>
+  </div>
+</section>
+
 <!-- ===== PORCIONADO ===== -->
 <section class="card mt-6 space-y-4">
   <div class="flex items-center justify-between">
@@ -183,5 +197,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=5"></script>
 {% endblock %}
