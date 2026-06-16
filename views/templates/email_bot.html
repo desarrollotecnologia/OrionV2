@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Bot de correo · Cut Beef{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/email_bot.css') }}?v=2" />
+{% endblock %}
+{% block content %}
+<header class="email-hero mb-8">
+  <div class="email-hero-text">
+    <p class="page-eyebrow">Comunicaciones</p>
+    <h1 class="page-title">Bot de correo a clientes</h1>
+    <p class="page-subtitle">Selecciona reportes, sube los PDF, revisa cada documento y confirma el envio.</p>
+  </div>
+  <div class="email-hero-meta">
+    {% if smtp_ok %}
+    <span class="email-smtp-badge email-smtp-ok">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+      SMTP listo
+    </span>
+    {% else %}
+    <span class="email-smtp-badge email-smtp-warn">SMTP sin configurar</span>
+    {% endif %}
+  </div>
+</header>
+
+<!-- Barra de progreso -->
+<div class="email-progress-bar card mb-6">
+  <div class="email-progress-steps">
+    <div class="email-step is-active" data-step="1"><span>1</span> Documentos</div>
+    <div class="email-step" data-step="2"><span>2</span> Destinatarios</div>
+    <div class="email-step" data-step="3"><span>3</span> Mensaje</div>
+    <div class="email-step" data-step="4"><span>4</span> Vista previa</div>
+  </div>
+  <div class="email-progress-track"><div class="email-progress-fill" id="progressFill"></div></div>
+</div>
+
+<section class="card email-docs-section mb-6">
+  <div class="email-section-head">
+    <div>
+      <h2 class="proy-title mb-1">Documentos adjuntos</h2>
+      <p class="hint mb-0">Marca los reportes e incluye el PDF de cada uno. Pasa el cursor sobre un archivo subido para verlo.</p>
+    </div>
+    <button type="button" id="btnSelectAllDocs" class="btn-secondary px-4 py-2 text-sm">Marcar todos</button>
+  </div>
+
+  <div class="email-doc-grid" id="docGrid">
+    {% for key, label in document_types.items() %}
+    <article class="email-doc-card" data-doc="{{ key }}">
+      <label class="email-doc-check">
+        <input type="checkbox" class="doc-checkbox" value="{{ key }}" />
+        <span class="email-doc-badge">{{ label }}</span>
+      </label>
+      <div class="email-doc-body">
+        <label class="email-upload-zone" data-for="{{ key }}">
+          <input type="file" accept=".pdf,application/pdf" class="doc-file hidden" data-doc="{{ key }}" />
+          <span class="email-upload-icon email-upload-pdf">
+            <span class="email-upload-label">PDF</span>
+            <svg class="email-upload-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          </span>
+          <span class="email-upload-text">Subir PDF</span>
+        </label>
+        <div class="email-file-info hidden" data-info="{{ key }}">
+          <button type="button" class="email-file-preview-trigger" data-preview="{{ key }}" title="Ver vista previa">
+            <span class="email-file-icon-pdf">PDF</span>
+            <span class="email-file-name"></span>
+            <span class="email-file-size"></span>
+            <span class="email-file-hint">Pasa el cursor para previsualizar</span>
+          </button>
+          <div class="email-file-actions">
+            <label class="email-btn-replace">
+              <input type="file" accept=".pdf,application/pdf" class="doc-file-replace hidden" data-doc="{{ key }}" />
+              Cambiar
+            </label>
+            <button type="button" class="email-btn-remove" data-remove="{{ key }}">Quitar</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+  <div class="card space-y-4">
+    <div>
+      <h2 class="proy-title mb-1">Destinatarios</h2>
+      <p class="hint mb-0">Selecciona los clientes que recibiran el correo.</p>
+    </div>
+    <div id="contactosList" class="email-contact-list max-h-64 overflow-y-auto space-y-2">
+      <p class="text-sm text-[#8a9690]">Cargando contactos...</p>
+    </div>
+    <form id="formNuevoContacto" class="email-add-contact">
+      <div class="flex-1 min-w-[140px]">
+        <label class="lbl" for="ncCliente">Cliente</label>
+        <input type="text" id="ncCliente" class="inp" list="clientesSinEmail" placeholder="Nombre cliente" required />
+        <datalist id="clientesSinEmail"></datalist>
+      </div>
+      <div class="flex-1 min-w-[180px]">
+        <label class="lbl" for="ncEmail">Correo</label>
+        <input type="email" id="ncEmail" class="inp" placeholder="cliente@empresa.com" required />
+      </div>
+      <button type="submit" class="btn-secondary px-4 py-2 text-sm">Agregar</button>
+    </form>
+  </div>
+
+  <div class="card space-y-4">
+    <div>
+      <h2 class="proy-title mb-1">Mensaje</h2>
+      <p class="hint mb-0">Asunto y cuerpo del correo.</p>
+    </div>
+    <label class="block">
+      <span class="lbl">Asunto</span>
+      <input type="text" id="emailAsunto" class="inp" value="Reportes operativos Cut Beef" />
+    </label>
+    <label class="block">
+      <span class="lbl">Cuerpo del mensaje</span>
+      <textarea id="emailCuerpo" class="inp min-h-[140px] resize-y" rows="6">Estimado cliente,
+
+Adjuntamos los reportes operativos correspondientes al periodo actual.
+
+Saludos cordiales,
+Equipo Cut Beef · Colbeef</textarea>
+    </label>
+  </div>
+</section>
+
+<section class="card mb-6" id="resumenSection">
+  <h2 class="proy-title mb-3">Resumen de archivos</h2>
+  <div id="resumenArchivos" class="email-summary-empty">
+    <p class="text-sm text-[#8a9690]">Marca documentos y sube los PDF para ver el resumen.</p>
+  </div>
+</section>
+
+<div class="email-action-bar mb-8">
+  <button type="button" id="btnPreview" class="email-btn-preview" disabled>
+    <span class="email-btn-preview-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </span>
+    <span class="email-btn-preview-text">
+      <strong>Vista previa del envio</strong>
+      <small>Revisa destinatarios, mensaje y PDF adjuntos</small>
+    </span>
+  </button>
+  <button type="button" id="btnReset" class="btn-secondary px-5 py-2.5 text-sm">Limpiar sesion</button>
+</div>
+
+<section class="card">
+  <h2 class="proy-title mb-3">Historial reciente</h2>
+  <div class="overflow-x-auto">
+    <table class="orion-table text-sm">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Destinatario</th>
+          <th>Cliente</th>
+          <th>Asunto</th>
+          <th>Documentos</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="historialBody">
+        <tr><td colspan="6" class="text-center text-[#8a9690]">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Popover vista previa PDF (hover) -->
+<div id="pdfPopover" class="email-pdf-popover hidden" role="tooltip">
+  <header class="email-pdf-popover-head">
+    <span id="pdfPopoverTitle">Vista previa</span>
+    <button type="button" id="pdfPopoverClose" aria-label="Cerrar">&times;</button>
+  </header>
+  <div class="email-pdf-popover-body">
+    <iframe id="pdfPopoverFrame" title="Vista previa PDF"></iframe>
+  </div>
+  <footer class="email-pdf-popover-foot">
+    <label class="email-btn-replace email-btn-replace-pop">
+      <input type="file" accept=".pdf,application/pdf" id="pdfPopoverReplace" class="hidden" />
+      Cambiar archivo
+    </label>
+  </footer>
+</div>
+
+<!-- Modal vista previa envio -->
+<div id="previewModal" class="email-modal hidden" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+  <div class="email-modal-backdrop" data-close="1"></div>
+  <div class="email-modal-panel email-modal-panel-lg">
+    <header class="email-modal-header">
+      <div>
+        <h2 id="previewTitle" class="text-lg font-semibold text-[#2f3a35]">Vista previa del envio</h2>
+        <p class="text-xs text-[#8a9690] mt-0.5">Pasa el cursor sobre un documento para verificar el PDF. Usa &quot;Cambiar&quot; si no es el correcto.</p>
+      </div>
+      <button type="button" class="email-modal-close" data-close="1" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="email-modal-body" id="previewContent"></div>
+    <footer class="email-modal-footer">
+      <button type="button" class="btn-secondary px-5 py-2 text-sm" data-close="1">Cancelar</button>
+      <button type="button" id="btnConfirmSend" class="email-btn-confirm" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Confirmar y enviar
+      </button>
+    </footer>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.EMAIL_BOT = {
+    documentTypes: {{ document_types | tojson }},
+    smtpOk: {{ smtp_ok | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/email_bot.js') }}?v=2"></script>
+{% endblock %}

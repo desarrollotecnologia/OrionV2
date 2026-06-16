@@ -11,3 +11,4 @@ _env.txt
 .idea/
 *.sqlite
 node_modules/
+uploads/

@@ -77,6 +77,11 @@
         <span class="dot"></span><span>Paradas</span>
       </a>
 
+      <p class="nav-section pt-4">Comunicaciones</p>
+      <a href="{{ url_for('email_bot.index') }}" class="nav-link {% if page=='email_bot' %}active{% endif %}">
+        <span class="dot"></span><span>Bot de correo</span>
+      </a>
+
       {% if session.user_role == 'admin' %}
       <p class="nav-section pt-4">Administracion</p>
       <a href="{{ url_for('usuarios.index') }}" class="nav-link {% if page=='usuarios' %}active{% endif %}">

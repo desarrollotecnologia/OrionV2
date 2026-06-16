@@ -1,25 +1,45 @@
--- Esquema de la base de datos ORION (alfa)
--- Se ejecuta automaticamente al iniciar la aplicacion si las tablas no existen.
+-- =============================================================================
+-- ORION - Creacion completa en MySQL (ejecutar UNA VEZ como ROOT)
+--
+--   mysql -u root -p < database/setup_admin_completo.sql
+--
+-- Contrasena del usuario MySQL "admin": debe coincidir con DB_PASSWORD en .env
+-- Valor actual en .env: Adm2026**
+-- =============================================================================
+
+CREATE DATABASE IF NOT EXISTS `orion`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- Usuario de conexion (todos los permisos sobre la base orion)
+DROP USER IF EXISTS 'admin'@'localhost';
+DROP USER IF EXISTS 'admin'@'127.0.0.1';
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'Adm2026**';
+CREATE USER 'admin'@'127.0.0.1' IDENTIFIED BY 'Adm2026**';
+
+GRANT ALL PRIVILEGES ON `orion`.* TO 'admin'@'localhost' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON `orion`.* TO 'admin'@'127.0.0.1' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+USE `orion`;
 
 CREATE TABLE IF NOT EXISTS users (
-    id                      INT AUTO_INCREMENT PRIMARY KEY,
-    username                VARCHAR(64)  NOT NULL UNIQUE,
-    password_hash           VARCHAR(255) NOT NULL,
-    nombre                  VARCHAR(150) NULL,
-    rol                     VARCHAR(50)  NOT NULL DEFAULT 'user',
-    activo                  TINYINT(1)   NOT NULL DEFAULT 1,
-    must_change_password    TINYINT(1)   NOT NULL DEFAULT 1,
-    creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    username        VARCHAR(64)  NOT NULL UNIQUE,
+    password_hash   VARCHAR(255) NOT NULL,
+    nombre          VARCHAR(150) NULL,
+    rol             VARCHAR(50)  NOT NULL DEFAULT 'admin',
+    activo          TINYINT(1)   NOT NULL DEFAULT 1,
+    creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Indicadores principales (hoja ORION)
 CREATE TABLE IF NOT EXISTS indicadores_orion (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     mes             INT          NULL,
     anio            INT          NULL,
     fecha           DATE         NULL,
-    seccion         VARCHAR(50)  NULL,        -- BOVINOS / PORCINOS / OPERATIVIDAD / CIFRAS
-    bloque          VARCHAR(50)  NULL,        -- INDICADORES / CUMPLIMIENTO / OPERATIVIDAD / CIFRAS
+    seccion         VARCHAR(50)  NULL,
+    bloque          VARCHAR(50)  NULL,
     item            INT          NULL,
     criterio        VARCHAR(150) NULL,
     hoy             DOUBLE       NULL,
@@ -34,7 +54,6 @@ CREATE TABLE IF NOT EXISTS indicadores_orion (
     INDEX idx_bloque (bloque)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja BASE DATOS (registros operativos)
 CREATE TABLE IF NOT EXISTS base_datos (
     id                       INT AUTO_INCREMENT PRIMARY KEY,
     item                     INT          NULL,
@@ -66,7 +85,6 @@ CREATE TABLE IF NOT EXISTS base_datos (
     INDEX idx_origen (origen)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja MERMA FRIO (detalle por lote)
 CREATE TABLE IF NOT EXISTS merma_frio (
     id                INT AUTO_INCREMENT PRIMARY KEY,
     item              INT          NULL,
@@ -94,7 +112,6 @@ CREATE TABLE IF NOT EXISTS merma_frio (
     INDEX idx_origen (origen)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Resumen mensual de merma (hojas MERMA FRIO% 25-26 / 24-25)
 CREATE TABLE IF NOT EXISTS merma_resumen (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     item                INT          NULL,
@@ -104,12 +121,11 @@ CREATE TABLE IF NOT EXISTS merma_resumen (
     merma_prom_mensual  DOUBLE       NULL,
     merma_prom_anual    DOUBLE       NULL,
     comportamiento      DOUBLE       NULL,
-    periodo             VARCHAR(10)  NULL,    -- '25-26' o '24-25'
+    periodo             VARCHAR(10)  NULL,
     INDEX idx_periodo (periodo),
     INDEX idx_anio_mes (anio, mes_num)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja PPTO DESP. (seguimiento ejecucion presupuesto canales)
 CREATE TABLE IF NOT EXISTS ppto_desp (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     anio            INT          NULL,
@@ -122,10 +138,9 @@ CREATE TABLE IF NOT EXISTS ppto_desp (
     INDEX idx_mes (mes_num)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja TABLERO IND. (seguimiento semanal de ejecucion)
 CREATE TABLE IF NOT EXISTS tablero_ind (
     id              INT AUTO_INCREMENT PRIMARY KEY,
-    especie         VARCHAR(50)  NULL,        -- BOVINOS / PORCINOS
+    especie         VARCHAR(50)  NULL,
     semana          INT          NULL,
     meta            DOUBLE       NULL,
     ejecucion       DOUBLE       NULL,
@@ -134,7 +149,6 @@ CREATE TABLE IF NOT EXISTS tablero_ind (
     INDEX idx_especie (especie)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja REPORTEOPER (operatividad / extras / kilogramos)
 CREATE TABLE IF NOT EXISTS reporte_operatividad (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     item            VARCHAR(20)  NULL,
@@ -167,7 +181,6 @@ CREATE TABLE IF NOT EXISTS reporte_kilogramos (
     INDEX idx_mes (mes_num)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja PARADASTD (paradas estandar)
 CREATE TABLE IF NOT EXISTS paradas_std (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
     fecha                       DATE NULL,
@@ -182,26 +195,9 @@ CREATE TABLE IF NOT EXISTS paradas_std (
     recepcion_entrega           DOUBLE NULL,
     reunion_magica              DOUBLE NULL,
     total                       DOUBLE NULL,
-    observaciones               VARCHAR(255) NULL,
-    extras                      JSON NULL,
-    origen                      VARCHAR(20) NOT NULL DEFAULT 'excel',
-    creado_en                   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_fecha (fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Catalogo de categorias de paradas (sistema + personalizadas)
-CREATE TABLE IF NOT EXISTS paradas_categorias (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    clave       VARCHAR(64) NOT NULL UNIQUE,
-    etiqueta    VARCHAR(200) NOT NULL,
-    columna_bd  VARCHAR(64) NULL,
-    es_sistema  TINYINT(1) NOT NULL DEFAULT 0,
-    activo      TINYINT(1) NOT NULL DEFAULT 1,
-    creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_activo (activo)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Hoja TIEMPO PRODUCCION (resumen por cliente)
 CREATE TABLE IF NOT EXISTS tiempo_produccion (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     cliente             VARCHAR(200) NULL,
@@ -212,7 +208,6 @@ CREATE TABLE IF NOT EXISTS tiempo_produccion (
     INDEX idx_cliente (cliente)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Hoja CARGOS
 CREATE TABLE IF NOT EXISTS cargos (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     numero      INT          NULL,
@@ -221,56 +216,6 @@ CREATE TABLE IF NOT EXISTS cargos (
     INDEX idx_cargo (cargo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Proyecciones de tiempos de desposte (planeacion del turno, historico)
-CREATE TABLE IF NOT EXISTS proyecciones (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    fecha           DATE         NOT NULL,
-    titulo          VARCHAR(160) NULL,
-    hora_inicio     VARCHAR(8)   NULL,
-    descanso        VARCHAR(8)   NULL,
-    parada          VARCHAR(8)   NULL,
-    duracion        VARCHAR(8)   NULL,
-    salida          VARCHAR(8)   NULL,
-    tiempo_planta   VARCHAR(8)   NULL,
-    aplica_comidas  VARCHAR(3)   NULL,
-    total_canales   INT          NULL,
-    total_operarios INT          NULL,
-    total_tiempo    VARCHAR(8)   NULL,
-    desposte        JSON         NULL,
-    porcionado      JSON         NULL,
-    creado_por      VARCHAR(150) NULL,
-    creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_fecha (fecha)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Contactos de clientes para envio de correos (bot de correo)
-CREATE TABLE IF NOT EXISTS cliente_contactos (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    cliente     VARCHAR(200) NOT NULL,
-    email       VARCHAR(255) NOT NULL,
-    activo      TINYINT(1)   NOT NULL DEFAULT 1,
-    creado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uniq_cliente_email (cliente, email),
-    INDEX idx_cliente (cliente),
-    INDEX idx_activo (activo)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Historial de envios del bot de correo
-CREATE TABLE IF NOT EXISTS email_log (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    destinatario    VARCHAR(255) NOT NULL,
-    cliente         VARCHAR(200) NULL,
-    asunto          VARCHAR(255) NOT NULL,
-    documentos      VARCHAR(255) NULL,
-    estado          VARCHAR(30)  NOT NULL,
-    mensaje         TEXT         NULL,
-    enviado_por     VARCHAR(150) NULL,
-    enviado_en      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_enviado_en (enviado_en),
-    INDEX idx_estado (estado)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Bitacora de sincronizaciones del Excel
 CREATE TABLE IF NOT EXISTS sync_log (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     sincronizado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

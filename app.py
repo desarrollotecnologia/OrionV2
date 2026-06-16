@@ -19,6 +19,8 @@ from controllers import (
     paradas_bp,
     usuarios_bp,
     api_bp,
+    email_bot_bp,
+    email_bot_api_bp,
 )
 from models import user as user_model
 from services import live as live_bus
@@ -123,6 +125,8 @@ def create_app() -> tuple[Flask, SocketIO]:
     app.register_blueprint(paradas_bp)
     app.register_blueprint(usuarios_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(email_bot_bp)
+    app.register_blueprint(email_bot_api_bp)
 
     @app.route("/healthz")
     def healthz():
