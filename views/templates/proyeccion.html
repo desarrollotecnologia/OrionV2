@@ -17,6 +17,7 @@
       <input type="date" id="proyFecha" class="inp !py-1.5 !w-auto text-xs" />
     </div>
     <button type="button" id="btnGuardarProy" class="px-5 py-2 text-sm">Guardar</button>
+    <button type="button" id="btnActualizarProy" class="hidden px-5 py-2 text-sm bg-[#8f5560] hover:bg-[#7a4652]">Actualizar</button>
     <button type="button" id="btnNuevaProy" class="btn-secondary px-4 py-2 text-sm">Nueva</button>
   </div>
 </header>
@@ -183,5 +184,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=7"></script>
 {% endblock %}

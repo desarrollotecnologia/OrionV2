@@ -5,6 +5,7 @@
 
   // velocidades[cliente] = { canal_h, canal_hh, kilos_h, operarios_prom }
   let velocidades = {};
+  let editId = null;
 
   // ---------- Helpers de tiempo ----------
   function hhmmToMin(s) {
@@ -225,6 +226,34 @@
       .catch(() => Live.toast("Fallo la peticion", "error"));
   }
 
+  function actualizarProyeccion() {
+    if (!editId) {
+      Live.toast("Primero carga una proyeccion del historico", "warn");
+      return;
+    }
+    const estado = recolectarEstado();
+    if (!estado.desposte.length && !estado.porcionado.length) {
+      Live.toast("Agrega al menos una fila con datos", "warn");
+      return;
+    }
+    fetch(`/api/proyeccion/${editId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(estado),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          Live.toast("Proyeccion actualizada", "ok");
+          cargarHistorico();
+        } else {
+          Live.toast(data.error || "No se pudo actualizar", "error");
+        }
+      })
+      .catch(() => Live.toast("Fallo la peticion", "error"));
+  }
+
   function limpiarTabla(tbody) { tbody.innerHTML = ""; }
 
   function nuevaProyeccion() {
@@ -235,6 +264,8 @@
     $("igHoraInicio").value = "09:00";
     $("igDescanso").value = "01:00";
     $("igParada").value = "00:00";
+    editId = null;
+    $("btnActualizarProy").classList.add("hidden");
     $("tbodyDesposte").appendChild(nuevaFilaDesposte());
     $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
     recalc();
@@ -244,6 +275,8 @@
     Live.fetchJSON(`/api/proyeccion/${id}`).then(data => {
       if (!data.ok) { Live.toast("No se encontro", "error"); return; }
       const p = data.proyeccion;
+      editId = Number(p.id || id);
+      $("btnActualizarProy").classList.remove("hidden");
       $("proyTitulo").value = p.titulo || "";
       $("proyFecha").value = (p.fecha || "").slice(0, 10);
       $("igHoraInicio").value = p.hora_inicio || "09:00";
@@ -429,6 +462,7 @@
       $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
     });
     $("btnGuardarProy").addEventListener("click", guardarProyeccion);
+    $("btnActualizarProy").addEventListener("click", actualizarProyeccion);
     $("btnNuevaProy").addEventListener("click", nuevaProyeccion);
     $("mClose").addEventListener("click", cerrarModal);
     $("mCerrar").addEventListener("click", cerrarModal);

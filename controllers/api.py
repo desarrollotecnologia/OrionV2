@@ -320,6 +320,17 @@ def proyeccion_eliminar(proy_id: int):
     return jsonify({"ok": bool(n), "eliminados": n})
 
 
+@bp.route("/proyeccion/<int:proy_id>", methods=["PUT"])
+@login_required
+def proyeccion_actualizar(proy_id: int):
+    payload = request.get_json(silent=True) or {}
+    try:
+        row = proyeccion_model.actualizar(proy_id, payload, session.get("user_name"))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "proyeccion": _serialize_rows([row])[0]})
+
+
 @bp.route("/captura/base-datos", methods=["POST"])
 @login_required
 def captura_base_datos_create():

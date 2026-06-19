@@ -55,6 +55,46 @@ def crear(payload: dict[str, Any], usuario: str | None = None) -> dict[str, Any]
     return obtener(row["id"]) if row else {}
 
 
+def actualizar(proy_id: int, payload: dict[str, Any], usuario: str | None = None) -> dict[str, Any]:
+    existente = obtener(proy_id)
+    if not existente:
+        raise ValueError("No existe la proyeccion")
+
+    fecha_str = (payload.get("fecha") or "").strip()
+    fecha_obj = datetime.strptime(fecha_str, "%Y-%m-%d").date() if fecha_str else date.today()
+    desposte = payload.get("desposte") or []
+    porcionado = payload.get("porcionado") or []
+    if not desposte and not porcionado:
+        raise ValueError("La proyeccion no tiene filas para guardar")
+
+    db.execute(
+        "UPDATE proyecciones SET "
+        "fecha=%s, titulo=%s, hora_inicio=%s, descanso=%s, parada=%s, duracion=%s, salida=%s, tiempo_planta=%s, "
+        "aplica_comidas=%s, total_canales=%s, total_operarios=%s, total_tiempo=%s, "
+        "desposte=%s, porcionado=%s, creado_por=%s "
+        "WHERE id=%s",
+        (
+            fecha_obj,
+            (payload.get("titulo") or "").strip() or None,
+            payload.get("hora_inicio"),
+            payload.get("descanso"),
+            payload.get("parada"),
+            payload.get("duracion"),
+            payload.get("salida"),
+            payload.get("tiempo_planta"),
+            payload.get("aplica_comidas"),
+            _to_int(payload.get("total_canales")),
+            _to_int(payload.get("total_operarios")),
+            payload.get("total_tiempo"),
+            json.dumps(desposte, ensure_ascii=False),
+            json.dumps(porcionado, ensure_ascii=False),
+            usuario or existente.get("creado_por"),
+            proy_id,
+        ),
+    )
+    return obtener(proy_id) or {}
+
+
 def _to_int(v: Any) -> int | None:
     try:
         return int(float(v))
