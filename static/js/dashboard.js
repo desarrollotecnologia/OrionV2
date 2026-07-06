@@ -286,16 +286,41 @@
   // ---------- Rango de fechas (Ajustes) ----------
   const STORE_KEY = 'orion.dashboard.rango';
   function hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function inicioMesISO() {
+    const hoy = new Date();
+    return new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10);
+  }
+  function rangoDefault() {
+    return { desde: inicioMesISO(), hasta: hoyISO() };
+  }
+  function normalizarRango(r) {
+    const hoy = hoyISO();
+    const iniMes = inicioMesISO();
+    let desde = (r && r.desde) ? String(r.desde) : '';
+    let hasta = (r && r.hasta) ? String(r.hasta) : '';
+    if (!desde || !hasta) return rangoDefault();
+    if (desde > hasta) { const t = desde; desde = hasta; hasta = t; }
+    // Si el rango guardado quedo totalmente en meses anteriores, lo movemos al mes actual.
+    if (hasta < iniMes) return rangoDefault();
+    if (desde > hoy) desde = hoy;
+    if (hasta > hoy) hasta = hoy;
+    if (desde > hasta) return rangoDefault();
+    return { desde, hasta };
+  }
 
   function getRango() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         const r = JSON.parse(raw);
-        if (r && r.desde && r.hasta) return r;
+        const rr = normalizarRango(r);
+        setRango(rr);
+        return rr;
       }
     } catch (e) { /* noop */ }
-    return { desde: hoyISO(), hasta: hoyISO() };
+    const rr = rangoDefault();
+    setRango(rr);
+    return rr;
   }
   function setRango(r) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(r)); } catch (e) { /* noop */ }

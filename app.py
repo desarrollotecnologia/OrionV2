@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, redirect, url_for
@@ -72,13 +73,6 @@ def _database_has_data() -> bool:
 
 
 def _initial_import() -> None:
-    if _database_has_data() and not config.IMPORT_ON_START:
-        log.info(
-            "MySQL ya tiene datos. Arranque rapido: la app lee desde la base de datos. "
-            "Usa 'Sincronizar Excel' o setup_db.bat para actualizar desde el archivo."
-        )
-        return
-
     if not config.EXCEL_PATH.exists():
         if not _database_has_data():
             log.warning(
@@ -87,6 +81,27 @@ def _initial_import() -> None:
                 config.EXCEL_PATH,
             )
         return
+
+    if _database_has_data() and not config.IMPORT_ON_START:
+        last = sync_log_model.ultimo() or {}
+        excel_mtime = datetime.fromtimestamp(config.EXCEL_PATH.stat().st_mtime)
+        last_sync = last.get("sincronizado_en")
+        last_file = str(last.get("archivo") or "")
+        same_file = last_file.strip().lower() == str(config.EXCEL_PATH).strip().lower()
+        needs_refresh = (
+            (last_sync is None)
+            or (not same_file)
+            or (isinstance(last_sync, datetime) and excel_mtime > last_sync)
+        )
+        if not needs_refresh:
+            log.info(
+                "MySQL ya tiene datos y el Excel no tiene cambios nuevos. "
+                "Arranque rapido usando base local."
+            )
+            return
+        log.info(
+            "Excel mas reciente detectado (archivo o fecha). Se sincroniza automaticamente."
+        )
 
     log.info("Importando Excel a MySQL...")
     summary = import_all()
