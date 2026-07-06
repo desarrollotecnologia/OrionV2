@@ -5,7 +5,7 @@
   let lineaId = 0;
 
   function todayStr() {
-    return new Date().toISOString().slice(0, 10);
+    return Live.fmt.isoDate();
   }
 
   function paint(msg, kind) {

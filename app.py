@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, redirect, url_for
@@ -26,9 +25,6 @@ from controllers import (
 )
 from models import user as user_model
 from services import live as live_bus
-from services.excel_importer import import_all
-from services.excel_watcher import ExcelWatcher
-from models import sync_log as sync_log_model
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -55,64 +51,6 @@ def _init_database() -> bool:
             exc,
         )
         return False
-
-
-def _database_has_data() -> bool:
-    """True si MySQL ya tiene filas importadas (no hace falta volver a cargar Excel)."""
-    try:
-        row = db.fetch_one(
-            "SELECT ("
-            "(SELECT COUNT(*) FROM base_datos) + "
-            "(SELECT COUNT(*) FROM indicadores_orion) + "
-            "(SELECT COUNT(*) FROM merma_frio)"
-            ") AS total"
-        )
-        return bool(row and int(row["total"]) > 0)
-    except Exception:  # noqa: BLE001
-        return False
-
-
-def _initial_import() -> None:
-    if not config.EXCEL_PATH.exists():
-        if not _database_has_data():
-            log.warning(
-                "Base de datos vacia y no se encontro el Excel en %s. "
-                "Ejecuta setup_db.bat o ajusta EXCEL_PATH en .env.",
-                config.EXCEL_PATH,
-            )
-        return
-
-    if _database_has_data() and not config.IMPORT_ON_START:
-        last = sync_log_model.ultimo() or {}
-        excel_mtime = datetime.fromtimestamp(config.EXCEL_PATH.stat().st_mtime)
-        last_sync = last.get("sincronizado_en")
-        last_file = str(last.get("archivo") or "")
-        same_file = last_file.strip().lower() == str(config.EXCEL_PATH).strip().lower()
-        needs_refresh = (
-            (last_sync is None)
-            or (not same_file)
-            or (isinstance(last_sync, datetime) and excel_mtime > last_sync)
-        )
-        if not needs_refresh:
-            log.info(
-                "MySQL ya tiene datos y el Excel no tiene cambios nuevos. "
-                "Arranque rapido usando base local."
-            )
-            return
-        log.info(
-            "Excel mas reciente detectado (archivo o fecha). Se sincroniza automaticamente."
-        )
-
-    log.info("Importando Excel a MySQL...")
-    summary = import_all()
-    estado = "ok" if summary.get("ok") else "warn"
-    sync_log_model.add(
-        estado,
-        summary.get("archivo", ""),
-        f"inicial hojas={summary.get('hojas')}",
-        summary.get("duracion_seg"),
-    )
-    log.info("Resumen importacion: %s", summary)
 
 
 def create_app() -> tuple[Flask, SocketIO]:
@@ -182,33 +120,21 @@ def main() -> int:
         )
         return 1
 
-    _initial_import()
     app, socketio = create_app()
 
-    watcher: ExcelWatcher | None = None
-    if config.WATCHER_ENABLED:
-        def on_change(summary):
-            live_bus.broadcast("orion:sync", {"summary": summary})
-        watcher = ExcelWatcher(on_change=on_change)
-        watcher.start()
-
-    try:
-        log.info(
-            "Servidor Cut Beef listo en http://%s:%s/  (CTRL+C para detener)",
-            config.FLASK_HOST,
-            config.FLASK_PORT,
-        )
-        socketio.run(
-            app,
-            host=config.FLASK_HOST,
-            port=config.FLASK_PORT,
-            debug=config.FLASK_DEBUG,
-            use_reloader=False,
-            allow_unsafe_werkzeug=True,
-        )
-    finally:
-        if watcher is not None:
-            watcher.stop()
+    log.info(
+        "Servidor Cut Beef listo en http://%s:%s/  (CTRL+C para detener)",
+        config.FLASK_HOST,
+        config.FLASK_PORT,
+    )
+    socketio.run(
+        app,
+        host=config.FLASK_HOST,
+        port=config.FLASK_PORT,
+        debug=config.FLASK_DEBUG,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )
     return 0
 
 

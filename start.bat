@@ -18,7 +18,7 @@ if not exist .env (
 
   copy /Y .env.example .env >nul
 
-  echo Edita .env con tus credenciales MySQL y la ruta del Excel.
+  echo Edita .env con tus credenciales MySQL.
 
   notepad .env
 

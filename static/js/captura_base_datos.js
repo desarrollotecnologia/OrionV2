@@ -18,13 +18,14 @@
   const mesAnioHint = $("f_mesanio");
 
   // ----- Defaults -----
-  function hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function hoyISO() { return Live.fmt.isoDate(); }
   fecha.value = hoyISO();
   reposo.value = "0:00";
 
   function actualizarMesAnioHint() {
     if (!fecha.value) { mesAnioHint.textContent = ""; return; }
-    const d = new Date(fecha.value);
+    const d = Live.fmt.parseDate(fecha.value);
+    if (!(d instanceof Date)) return;
     if (Number.isNaN(d.getTime())) return;
     mesAnioHint.textContent = `Mes ${d.getMonth() + 1} · Año ${d.getFullYear()} (${Live.MES_NOMBRE[d.getMonth() + 1]})`;
   }

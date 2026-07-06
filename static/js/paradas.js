@@ -158,7 +158,7 @@
             r.origen === 'manual'
               ? 'bg-emerald-900/40 border border-emerald-700 text-emerald-200'
               : 'bg-slate-800 border border-slate-700 text-slate-300'
-          }">${r.origen || 'excel'}</span>
+          }">${r.origen === 'manual' ? 'manual' : 'base'}</span>
         </td>
         <td class="text-right">${Live.fmt.num(r.tardanza_inicio)}</td>
         <td class="text-right">${Live.fmt.num(r.lavado_desinfeccion)}</td>

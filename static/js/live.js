@@ -49,7 +49,7 @@
   socket.on('disconnect', () => { setDot(false); });
   socket.on('orion:sync', (data) => {
     setStamp();
-    showToast('Datos actualizados desde el Excel.', 'ok');
+    showToast('Datos actualizados desde la base de datos.', 'ok');
     Live.notify('sync', data);
   });
   socket.on('orion:tick', (data) => {
@@ -57,21 +57,34 @@
     Live.notify('tick', data);
   });
 
-  // Boton de sincronizacion manual
+  // Pulso local: las vistas vuelven a consultar sus endpoints, que leen MySQL.
+  // Asi tambien se reflejan cambios hechos desde otra sesion o proceso.
+  const MYSQL_POLL_MS = 10000;
+  function pollMysql() {
+    if (document.hidden) return;
+    setStamp();
+    Live.notify('tick', { fuente: 'mysql', ts: new Date().toISOString() });
+  }
+  window.setInterval(pollMysql, MYSQL_POLL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) pollMysql();
+  });
+
+  // Boton para recargar datos desde MySQL en todas las pantallas
   document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'syncBtn') {
       e.target.disabled = true;
-      e.target.textContent = 'Sincronizando...';
+      e.target.textContent = 'Actualizando...';
       fetch('/api/sync', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
-          showToast(data.ok ? 'Sincronizacion manual OK' : 'Sincronizacion con avisos', data.ok ? 'ok' : 'warn');
+          showToast(data.ok ? 'Datos recargados desde MySQL' : 'Actualizacion con avisos', data.ok ? 'ok' : 'warn');
           Live.notify('sync', { summary: data });
         })
-        .catch(() => showToast('Fallo la sincronizacion', 'error'))
+        .catch(() => showToast('Fallo la actualizacion', 'error'))
         .finally(() => {
           e.target.disabled = false;
-          e.target.textContent = 'Sincronizar Excel';
+          e.target.textContent = 'Actualizar datos';
         });
     }
   });
@@ -86,14 +99,33 @@
       if (v === null || v === undefined || Number.isNaN(+v)) return '--';
       return (Number(v) * 100).toFixed(dec) + '%';
     },
+    parseDate: (v) => {
+      if (!v) return '--';
+      try {
+        if (typeof v === 'string') {
+          const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        }
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return v;
+        return d;
+      } catch (_) { return v; }
+    },
     date: (v) => {
       if (!v) return '--';
       try {
-        const d = new Date(v);
-        if (Number.isNaN(d.getTime())) return v;
+        const d = Live.fmt.parseDate(v);
+        if (!(d instanceof Date)) return v;
         return d.toLocaleDateString('es-CO');
       } catch (_) { return v; }
-    }
+    },
+    isoDate: (v) => {
+      const d = v instanceof Date ? v : new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
   };
 
   Live.MES_NOMBRE = ['', 'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];

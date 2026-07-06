@@ -17,14 +17,15 @@
   const obs = $("f_obs");
   const diasHint = $("f_dias");
 
-  function hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function hoyISO() { return Live.fmt.isoDate(); }
   fp.value = hoyISO();
   fb.value = hoyISO();
 
   function actualizarDias() {
     if (!fb.value || !fp.value) { diasHint.textContent = "Dias en cava se calcula solo"; return; }
-    const a = new Date(fb.value);
-    const b = new Date(fp.value);
+    const a = Live.fmt.parseDate(fb.value);
+    const b = Live.fmt.parseDate(fp.value);
+    if (!(a instanceof Date) || !(b instanceof Date)) return;
     if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return;
     const diff = Math.round((b - a) / (24 * 3600 * 1000));
     diasHint.textContent = diff >= 0 ? `${diff} dias en cava` : "Fechas invertidas";

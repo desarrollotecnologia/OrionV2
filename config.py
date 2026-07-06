@@ -41,15 +41,15 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "orion")
 
-    # Excel
+    # Excel historico: solo se usa para cargas manuales/migraciones, no en el arranque normal.
     EXCEL_PATH = Path(
         os.getenv("EXCEL_PATH", str(BASE_DIR / "ORION.xlsx"))
     )
-    # Si False (default), al arrancar usa MySQL y no reimporta el Excel si ya hay datos
+    # Compatibilidad con scripts manuales de importacion historica.
     IMPORT_ON_START = _bool(os.getenv("IMPORT_ON_START"), False)
 
-    # Watcher
-    WATCHER_ENABLED = _bool(os.getenv("WATCHER_ENABLED"), True)
+    # El aplicativo trabaja contra MySQL; el watcher de Excel queda desactivado por defecto.
+    WATCHER_ENABLED = _bool(os.getenv("WATCHER_ENABLED"), False)
     WATCHER_DEBOUNCE_SEC = float(os.getenv("WATCHER_DEBOUNCE_SEC", "2.0"))
 
     # Auth

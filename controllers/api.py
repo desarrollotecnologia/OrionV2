@@ -1,11 +1,10 @@
 """API JSON consumida por el frontend.
 
-Todos los endpoints requieren sesion. Devuelven datos calculados a partir
-de la base de datos local que se sincroniza desde el Excel.
+Todos los endpoints requieren sesion. Devuelven datos calculados desde MySQL,
+que es la fuente viva del aplicativo.
 """
 from __future__ import annotations
 
-import time
 from datetime import date, datetime
 
 from flask import Blueprint, jsonify, request, session
@@ -26,7 +25,6 @@ from models import (
     usabilidad as usabilidad_model,
 )
 from config import config
-from services.excel_importer import import_all
 from services import live as live_bus
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -92,16 +90,12 @@ def usabilidad_data():
 @bp.route("/sync", methods=["POST"])
 @login_required
 def sync_now():
-    """Permite forzar una sincronizacion manual desde la UI."""
-    started = time.perf_counter()
-    summary = import_all()
-    summary["duracion_seg"] = round(time.perf_counter() - started, 3)
-    sync_log_model.add(
-        "ok" if summary.get("ok") else "warn",
-        summary.get("archivo", ""),
-        f"manual hojas={summary.get('hojas')}",
-        summary["duracion_seg"],
-    )
+    """Refresca clientes en vivo; los datos ya estan en MySQL."""
+    summary = {
+        "ok": True,
+        "fuente": "base_datos",
+        "mensaje": "Datos leidos desde MySQL",
+    }
     live_bus.broadcast("orion:sync", {"summary": summary})
     return jsonify(summary)
 
@@ -109,7 +103,7 @@ def sync_now():
 @bp.route("/sync/last")
 @login_required
 def sync_last():
-    return jsonify(_serialize(sync_log_model.ultimo()) or {})
+    return jsonify(_serialize(sync_log_model.ultima_actualizacion_datos()) or {})
 
 
 # -------- Dashboard --------
@@ -159,7 +153,7 @@ def dashboard_data():
         "paradas_ultima_fecha": _serialize(paradas_ultima_fecha),
         "cifras_mes": _serialize_rows(cifras_mes),
         "proyeccion_clientes": _serialize_rows(proyeccion_clientes),
-        "ultima_sync": _serialize(sync_log_model.ultimo()),
+        "ultima_sync": _serialize(sync_log_model.ultima_actualizacion_datos()),
     })
 
 
@@ -173,7 +167,7 @@ def tablero_data():
     return jsonify({
         "bovinos": _serialize_rows(bovinos),
         "porcinos": _serialize_rows(porcinos),
-        "ultima_sync": _serialize(sync_log_model.ultimo()),
+        "ultima_sync": _serialize(sync_log_model.ultima_actualizacion_datos()),
     })
 
 
@@ -208,7 +202,7 @@ def mensual_data():
         "paradas_categoria": _serialize_rows(paradas_categoria),
         "paradas_recientes": _serialize_rows(paradas_recientes),
         "velocidades": _serialize_rows(velocidades),
-        "ultima_sync": _serialize(sync_log_model.ultimo()),
+        "ultima_sync": _serialize(sync_log_model.ultima_actualizacion_datos()),
     })
 
 
@@ -472,5 +466,5 @@ def paradas_dashboard():
         "evolucion_mensual": _serialize_rows(paradas_model.evolucion_mensual(anio=anio)),
         "recientes": _serialize_rows(paradas_model.recientes(20, anio=anio)),
         "manuales": _serialize_rows(paradas_model.manuales_recientes(10, anio=anio)),
-        "ultima_sync": _serialize(sync_log_model.ultimo()),
+        "ultima_sync": _serialize(sync_log_model.ultima_actualizacion_datos()),
     })

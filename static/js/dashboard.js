@@ -139,7 +139,7 @@
     const cont = document.getElementById('cifrasMes');
     if (!cont) return;
     if (!rows.length) {
-      cont.innerHTML = '<p class="text-[#8a9690] text-xs">Sin cifras del Excel todavia.</p>';
+      cont.innerHTML = '<p class="text-[#8a9690] text-xs">Sin cifras guardadas todavia.</p>';
       return;
     }
     const grouped = {};
@@ -285,10 +285,10 @@
 
   // ---------- Rango de fechas (Ajustes) ----------
   const STORE_KEY = 'orion.dashboard.rango';
-  function hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function hoyISO() { return Live.fmt.isoDate(); }
   function inicioMesISO() {
     const hoy = new Date();
-    return new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10);
+    return Live.fmt.isoDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
   }
   function rangoDefault() {
     return { desde: inicioMesISO(), hasta: hoyISO() };
@@ -337,7 +337,7 @@
 
   function calcularQuick(tipo) {
     const hoy = new Date();
-    const fmt = (d) => d.toISOString().slice(0, 10);
+    const fmt = (d) => Live.fmt.isoDate(d);
     if (tipo === 'hoy') return { desde: fmt(hoy), hasta: fmt(hoy) };
     if (tipo === 'mes') {
       const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1);

@@ -1,18 +1,15 @@
 # ORION - Aplicativo alfa
 
-Aplicacion local que toma como base el archivo `ORION.xlsx` y lo expone
-como un dashboard web en vivo. Cuando alguien edita y guarda el Excel,
-la aplicacion detecta el cambio, vuelve a leerlo, lo guarda en MySQL y
-emite un evento por websocket para que la interfaz se refresque
-automaticamente sin recargar.
+Aplicacion local que guarda y consulta la informacion operativa en MySQL.
+El archivo `ORION.xlsx` se usa solo como carga historica inicial/migracion;
+el uso diario del aplicativo lee y escribe directamente en la base de datos.
 
 ## Stack
 
 - **Backend:** Python 3.11+ con Flask y Flask-SocketIO (websockets/threading)
 - **Base de datos:** MariaDB 10.4 (XAMPP) - driver PyMySQL puro Python.
   Funciona tambien con MySQL 5.7+/8.x cambiando solo la conexion en `.env`.
-- **Importacion:** pandas + openpyxl
-- **Vigilancia archivo:** watchdog
+- **Importacion historica opcional:** pandas + openpyxl
 - **Frontend:** HTML + Tailwind CSS (CDN) + Chart.js + Socket.IO
 - **Arquitectura:** MVC tradicional
 
@@ -26,7 +23,7 @@ Orion/
   controllers/              Capa C (Flask blueprints)
   views/templates/          Capa V (Jinja2)
   static/                   CSS / JS / assets
-  services/                 Importador del Excel + watcher + bus de eventos
+  services/                 Importador historico + bus de eventos
 ```
 
 ## Instalacion
@@ -40,10 +37,7 @@ Orion/
    ```
 
 4. Copia `.env.example` como `.env`. Por defecto ya esta configurado
-   para MariaDB de XAMPP (root, sin contrasena). Solo ajusta
-   `EXCEL_PATH` si tu archivo esta en otra ruta.
-
-5. Asegurate de tener el archivo `ORION.xlsx` en la ruta indicada.
+   para MariaDB de XAMPP (root, sin contrasena).
 
 ## Ejecucion
 
@@ -58,13 +52,10 @@ Al iniciar:
 - Crea la base de datos `orion` si no existe.
 - Aplica el esquema (`database/schema.sql`).
 - Crea el usuario por defecto **admin / admin**.
-- Importa el Excel a MySQL.
-- Arranca el servidor en `http://127.0.0.1:5000` y un watcher que
-  vigila `ORION.xlsx`.
+- Arranca el servidor en `http://127.0.0.1:5000` leyendo MySQL.
 
-Cada vez que guardes el Excel se ejecuta una resincronizacion y se
-emite el evento `orion:sync` por websocket. Las vistas del dashboard,
-mensual y tablero se refrescan solas.
+Cuando se capturan o modifican datos desde el aplicativo, se guardan en
+MySQL y se emite el evento `orion:sync` para refrescar las vistas abiertas.
 
 ## Pantallas
 
@@ -79,7 +70,10 @@ mensual y tablero se refrescan solas.
 - **/tablero** - Tablero de indicadores semanal por especie
   (Bovinos / Porcinos) con grafica meta vs ejecucion + cumplimiento.
 
-## Hojas del Excel utilizadas
+## Carga historica desde Excel
+
+El importador de Excel queda disponible para migrar o sembrar datos antiguos,
+pero no participa en el flujo normal de operacion.
 
 - `ORION` -> indicadores generales del mes
 - `BASE DATOS` -> registros operativos (velocidades, kilos, canales)
@@ -95,8 +89,7 @@ mensual y tablero se refrescan solas.
 Las hojas `OPERATIVIDAD`, `CRONOGRAMA MENSUAL`, `FILTROACUMULADO` y
 `PPTO PORC.` se ignoran a peticion del usuario.
 
-## Sincronizacion manual
+## Actualizacion manual
 
-En la barra lateral hay un boton **Sincronizar Excel** que llama a
-`/api/sync` y reimporta inmediatamente el archivo, ademas del watcher
-que ya lo hace en cuanto se detecta un cambio en disco.
+En la barra lateral hay un boton **Actualizar datos** que llama a `/api/sync`
+y ordena a las pantallas recargar la informacion actual desde MySQL.

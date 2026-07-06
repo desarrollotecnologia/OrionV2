@@ -260,7 +260,7 @@
     limpiarTabla($("tbodyDesposte"));
     limpiarTabla($("tbodyPorcionado"));
     $("proyTitulo").value = "";
-    $("proyFecha").value = new Date().toISOString().slice(0, 10);
+    $("proyFecha").value = Live.fmt.isoDate();
     $("igHoraInicio").value = "09:00";
     $("igDescanso").value = "01:00";
     $("igParada").value = "00:00";
@@ -446,7 +446,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    $("proyFecha").value = new Date().toISOString().slice(0, 10);
+    $("proyFecha").value = Live.fmt.isoDate();
     cargarOpciones().then(() => {
       $("tbodyDesposte").appendChild(nuevaFilaDesposte());
       $("tbodyDesposte").appendChild(nuevaFilaDesposte());

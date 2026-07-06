@@ -5,17 +5,23 @@ from database import db
 
 
 def get_header() -> dict | None:
-    """Obtiene mes / anio / fecha del periodo actual."""
+    """Obtiene mes / anio / fecha del periodo con datos mas recientes."""
     row = db.fetch_one(
-        "SELECT MAX(mes) AS mes, MAX(anio) AS anio, MAX(fecha) AS fecha "
-        "FROM indicadores_orion"
+        "SELECT MAX(fecha) AS fecha FROM ("
+        "  SELECT MAX(fecha) AS fecha FROM base_datos WHERE fecha IS NOT NULL "
+        "  UNION ALL "
+        "  SELECT MAX(fecha_produccion) AS fecha FROM merma_frio WHERE fecha_produccion IS NOT NULL "
+        "  UNION ALL "
+        "  SELECT MAX(fecha) AS fecha FROM indicadores_orion WHERE fecha IS NOT NULL "
+        ") fechas"
     )
-    if not row:
+    fecha = row.get("fecha") if row else None
+    if not fecha:
         return None
     return {
-        "mes": row.get("mes"),
-        "anio": row.get("anio"),
-        "fecha": row.get("fecha").isoformat() if row.get("fecha") else None,
+        "mes": fecha.month,
+        "anio": fecha.year,
+        "fecha": fecha.isoformat(),
     }
 
 

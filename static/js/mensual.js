@@ -96,7 +96,7 @@
   function renderCifras(rows) {
     const cont = document.getElementById('cifrasMes');
     if (!cont) return;
-    if (!rows.length) { cont.innerHTML = '<p class="text-slate-500 text-xs">Sin cifras del Excel todavia.</p>'; return; }
+    if (!rows.length) { cont.innerHTML = '<p class="text-slate-500 text-xs">Sin cifras guardadas todavia.</p>'; return; }
     const grouped = {};
     rows.forEach(r => {
       const key = r.seccion || 'GENERAL';
