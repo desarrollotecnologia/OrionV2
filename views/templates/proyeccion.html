@@ -29,8 +29,12 @@
       <div>
         <h2 class="proy-title">Tiempos proyectados de desposte</h2>
         <p class="hint mb-0">La velocidad canal/hr se autocompleta con el promedio historico del cliente; puedes ajustarla.</p>
+        <p class="hint mb-0 text-[#8a9690]" id="velInfo">Velocidades historicas: cargando...</p>
       </div>
-      <button type="button" id="btnAddDesposte" class="btn-secondary px-4 py-2 text-sm">+ Agregar fila</button>
+      <div class="flex items-center gap-2">
+        <button type="button" id="btnRefrescarVel" class="btn-secondary px-3 py-2 text-sm" title="Vuelve a leer los promedios historicos de la base de datos">&#8635; Actualizar velocidades</button>
+        <button type="button" id="btnAddDesposte" class="btn-secondary px-4 py-2 text-sm">+ Agregar fila</button>
+      </div>
     </div>
     <div class="overflow-x-auto">
       <table class="orion-table proy-table">
@@ -106,7 +110,7 @@
   <div class="flex items-center justify-between">
     <div>
       <h2 class="proy-title">Tiempos aprox. porcionado</h2>
-      <p class="hint mb-0">Velocidad kg/hr/hm por operario; el tiempo se calcula con la cantidad de kilos.</p>
+        <p class="hint mb-0">Velocidad total kg/hr (igual que el Excel); tiempo estimado = kilos ÷ velocidad. Se autocompleta con el promedio historico.</p>
     </div>
     <button type="button" id="btnAddPorcionado" class="btn-secondary px-4 py-2 text-sm">+ Agregar fila</button>
   </div>
@@ -184,5 +188,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=8"></script>
+<script src="{{ url_for('static', filename='js/proyeccion.js') }}?v=10"></script>
 {% endblock %}

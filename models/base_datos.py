@@ -66,8 +66,10 @@ def velocidades_por_cliente() -> list[dict]:
     el historico):
 
     - canal_h / canal_hh: ultimos registros del proceso DESPOSTE.
-    - kilos_hh: ultimos registros del proceso PORCIONADO (kilos por
-      hombre-hora), para autocompletar la tabla de porcionado.
+    - kilos_hh: ultimos registros del proceso PORCIONADO, expresado como
+      velocidad TOTAL en kg/hr (kilos por hombre-hora * operarios). Asi
+      coincide con la columna "VELOCIDAD KG/HR/HM" del Excel, donde el
+      tiempo estimado = kilos / velocidad.
     """
     return db.fetch_all(
         "SELECT cliente, "
@@ -75,8 +77,8 @@ def velocidades_por_cliente() -> list[dict]:
         "                THEN velocidad_canal_h END)  AS canal_h, "
         "       AVG(CASE WHEN cat='DESPOSTE' AND velocidad_canal_hh > 0 "
         "                THEN velocidad_canal_hh END) AS canal_hh, "
-        "       AVG(CASE WHEN cat='PORCIONADO' AND velocidad_kilos_h > 0 "
-        "                THEN velocidad_kilos_h END)  AS kilos_hh, "
+        "       AVG(CASE WHEN cat='PORCIONADO' AND velocidad_kilos_h > 0 AND operarios > 0 "
+        "                THEN velocidad_kilos_h * operarios END)  AS kilos_hh, "
         "       AVG(operarios)                        AS operarios_prom, "
         "       SUM(CASE WHEN cat='DESPOSTE' THEN 1 ELSE 0 END) AS registros "
         "FROM ( "

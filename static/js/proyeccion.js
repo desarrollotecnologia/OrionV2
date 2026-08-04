@@ -44,6 +44,28 @@
     return isFinite(v) ? v : 0;
   };
 
+  // Parseo tolerante al formato colombiano: "1.000" = 1000, "1.000,50" = 1000.5,
+  // "340,91" = 340.91, "1.5" = 1.5 (decimal con un solo digito no es miles).
+  function parseNumCO(str) {
+    if (str == null) return 0;
+    let s = String(str).trim().replace(/\s/g, "");
+    if (!s) return 0;
+    const hasComma = s.includes(",");
+    if (hasComma) {
+      s = s.replace(/\./g, "").replace(",", ".");        // punto=miles, coma=decimal
+    } else if (s.includes(".")) {
+      const parts = s.split(".");
+      if (parts.length > 2) {
+        s = parts.join("");                               // varios puntos => miles
+      } else if (parts[1].length === 3) {
+        s = parts.join("");                               // "1.000" => 1000
+      }
+      // si el decimal no tiene 3 digitos ("1.5", "1.50") se deja tal cual
+    }
+    const n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
 
   // ---------- Filas DESPOSTE ----------
   function buscarVel(cliente) {
@@ -85,7 +107,7 @@
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><input type="text" list="clientesList" class="cell-inp f-cli" placeholder="Cliente" /></td>
-      <td><input type="number" min="0" step="0.01" class="cell-inp text-right f-kg" placeholder="0" /></td>
+      <td><input type="text" inputmode="decimal" class="cell-inp text-right f-kg" placeholder="1.000" /></td>
       <td><input type="number" min="0" step="1" class="cell-inp text-right f-operarios" placeholder="0" /></td>
       <td><input type="number" min="0" step="0.01" class="cell-inp text-right f-velhh" placeholder="0,00" /></td>
       <td class="text-right f-tiempo">0:00</td>
@@ -134,7 +156,7 @@
     // ----- Porcionado -----
     let pKg = 0, pMaxOp = 0, pMin = 0, pSumVel = 0, pN = 0;
     $("tbodyPorcionado").querySelectorAll("tr").forEach(tr => {
-      const kg = num(tr.querySelector(".f-kg"));
+      const kg = parseNumCO(tr.querySelector(".f-kg").value);
       const operarios = num(tr.querySelector(".f-operarios"));
       const velhh = num(tr.querySelector(".f-velhh"));
       // Igual que el Excel: tiempo estimado = kilos / velocidad kg/hr/hm.
@@ -188,7 +210,7 @@
     const porcionado = [];
     $("tbodyPorcionado").querySelectorAll("tr").forEach(tr => {
       const cli = tr.querySelector(".f-cli").value.trim();
-      const kg = num(tr.querySelector(".f-kg"));
+      const kg = parseNumCO(tr.querySelector(".f-kg").value);
       const operarios = num(tr.querySelector(".f-operarios"));
       const velhh = num(tr.querySelector(".f-velhh"));
       if (!cli && !kg && !velhh) return;
@@ -454,7 +476,53 @@
       });
       const dl = $("clientesList");
       dl.innerHTML = (data.clientes || []).map(c => `<option value="${c}"></option>`).join("");
+      const info = $("velInfo");
+      if (info) {
+        const hora = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+        info.textContent = `Velocidades historicas actualizadas a las ${hora} (ultimos 30 registros por cliente).`;
+      }
     }).catch(() => Live.toast("No se pudieron cargar las velocidades historicas", "error"));
+  }
+
+  // Reaplica los promedios historicos a las filas que estan en modo auto
+  // (respeta las velocidades que el usuario haya escrito a mano).
+  function reaplicarVelocidades() {
+    $("tbodyDesposte").querySelectorAll("tr").forEach(tr => {
+      const cli = tr.querySelector(".f-cli");
+      const velh = tr.querySelector(".f-velh");
+      if (!cli || !velh) return;
+      if (velh.dataset.auto === "0" && velh.value) return;  // editado a mano
+      const ref = buscarVel(cli.value);
+      if (ref && ref.canal_h) {
+        velh.value = Number(ref.canal_h).toFixed(2);
+        velh.dataset.auto = "1";
+        velh.title = `Promedio historico (${ref.registros || 0} registros)`;
+      }
+    });
+    $("tbodyPorcionado").querySelectorAll("tr").forEach(tr => {
+      const cli = tr.querySelector(".f-cli");
+      const velhh = tr.querySelector(".f-velhh");
+      if (!cli || !velhh) return;
+      if (velhh.dataset.auto === "0" && velhh.value) return;  // editado a mano
+      const ref = buscarVel(cli.value);
+      if (ref && ref.kilos_hh) {
+        velhh.value = Number(ref.kilos_hh).toFixed(2);
+        velhh.dataset.auto = "1";
+        velhh.title = `Promedio historico porcionado (${ref.registros || 0} registros)`;
+      }
+    });
+    recalc();
+  }
+
+  function refrescarVelocidades() {
+    const btn = $("btnRefrescarVel");
+    if (btn) btn.disabled = true;
+    cargarOpciones()
+      .then(() => {
+        reaplicarVelocidades();
+        Live.toast("Velocidades actualizadas desde la base de datos", "ok");
+      })
+      .finally(() => { if (btn) btn.disabled = false; });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -467,6 +535,7 @@
     });
     cargarHistorico();
 
+    $("btnRefrescarVel").addEventListener("click", refrescarVelocidades);
     $("btnAddDesposte").addEventListener("click", () => {
       $("tbodyDesposte").appendChild(nuevaFilaDesposte());
     });
