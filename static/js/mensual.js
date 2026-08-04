@@ -16,10 +16,45 @@
     }
   };
 
+  let selAnio = null, selMes = null, mesesCargados = false;
+
   function renderHeader(h) {
     document.getElementById('hMes').textContent = h.mes ? Live.MES_NOMBRE[h.mes] : '--';
     document.getElementById('hAnio').textContent = h.anio || '--';
     document.getElementById('hFecha').textContent = h.fecha ? `· ${Live.fmt.date(h.fecha)}` : '';
+  }
+
+  function renderSelector(meses, seleccion) {
+    const sel = document.getElementById('selMes');
+    if (!sel) return;
+    if (!mesesCargados) {
+      sel.innerHTML = (meses || []).map(m =>
+        `<option value="${m.anio}-${m.mes}">${m.label}</option>`).join('');
+      mesesCargados = true;
+      sel.addEventListener('change', () => {
+        const [a, mm] = sel.value.split('-').map(Number);
+        selAnio = a; selMes = mm;
+        load();
+      });
+    }
+    if (seleccion) sel.value = `${seleccion.anio}-${seleccion.mes}`;
+  }
+
+  function fmtKilos(v) {
+    if (v == null) return '--';
+    return Live.fmt.num(v, 0) + ' kg';
+  }
+
+  function renderKpis(k) {
+    if (!k) return;
+    document.getElementById('kpiCanales').textContent = Live.fmt.num(k.canales, 0);
+    document.getElementById('kpiLotes').textContent = `${Live.fmt.num(k.lotes, 0)} lotes`;
+    document.getElementById('kpiKilos').textContent = fmtKilos(k.kilos);
+    document.getElementById('kpiClientes').textContent = `${Live.fmt.num(k.clientes, 0)} clientes`;
+    document.getElementById('kpiMerma').textContent = k.merma_prom != null ? Live.fmt.pct(k.merma_prom) : 'Sin datos';
+    document.getElementById('kpiMermaLotes').textContent = `${Live.fmt.num(k.merma_lotes, 0)} lotes`;
+    document.getElementById('kpiParadas').textContent = Live.fmt.num(k.paradas_min, 0) + ' min';
+    document.getElementById('kpiParadasDias').textContent = `${Live.fmt.num(k.paradas_dias, 0)} dias`;
   }
 
   function renderIndicadores(rows) {
@@ -228,6 +263,8 @@
   }
 
   function renderAll(data) {
+    renderSelector(data.meses || [], data.seleccion);
+    renderKpis(data.kpis);
     renderHeader(data.header || {});
     renderIndicadores(data.indicadores || []);
     renderCumplimiento(data.cumplimiento || []);
@@ -246,7 +283,9 @@
   }
 
   function load() {
-    Live.fetchJSON('/api/mensual').then(renderAll).catch(err => {
+    let url = '/api/mensual';
+    if (selAnio && selMes) url += `?anio=${selAnio}&mes=${selMes}`;
+    Live.fetchJSON(url).then(renderAll).catch(err => {
       console.error(err);
       Live.toast('No se pudieron cargar los datos', 'error');
     });

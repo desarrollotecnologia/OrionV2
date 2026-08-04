@@ -14,6 +14,7 @@ from models import (
     base_datos as base_datos_model,
     cargos as cargos_model,
     indicadores as indicadores_model,
+    mensual as mensual_model,
     merma_frio as merma_model,
     paradas as paradas_model,
     ppto_desp as ppto_model,
@@ -177,21 +178,41 @@ def tablero_data():
 @bp.route("/mensual")
 @login_required
 def mensual_data():
-    header = indicadores_model.get_header() or {}
-    indicadores = indicadores_model.get_indicadores_mayo()
+    # Mes seleccionado (por defecto, el mas reciente con datos en la base)
+    meses = mensual_model.meses_disponibles()
+    anio_def, mes_def = mensual_model.mes_mas_reciente()
+    try:
+        anio = int(request.args.get("anio") or anio_def)
+        mes = int(request.args.get("mes") or mes_def)
+    except (TypeError, ValueError):
+        anio, mes = anio_def, mes_def
+    if mes < 1 or mes > 12:
+        anio, mes = anio_def, mes_def
+    desde, hasta = mensual_model._rango(anio, mes)
+
+    # --- Calculado EN VIVO desde el detalle (base_datos / merma_frio / paradas) ---
+    header = mensual_model.header(anio, mes)
+    indicadores = mensual_model.indicadores(anio, mes)
+    cifras = mensual_model.cifras(anio, mes)
+    kpis = mensual_model.kpis(anio, mes)
+    velocidades = mensual_model.velocidades(anio, mes)
+    paradas_categoria = paradas_model.total_por_categoria(desde=desde, hasta=hasta)
+    paradas_recientes = paradas_model.recientes(15, desde=desde, hasta=hasta)
+
+    # --- Aun desde el Excel (metas, personal y series historicas) ---
     cumplimiento = indicadores_model.get_cumplimiento_metas()
     operatividad = indicadores_model.get_operatividad()
-    cifras = indicadores_model.get_cifras_mes()
     extras = reporte_model.extras_por_mes()
     kilogramos = reporte_model.kilogramos()
     operatividad_planta = reporte_model.operatividad()
     merma_resumen = merma_model.resumen_anual("25-26")
-    paradas_categoria = paradas_model.total_por_categoria()
-    paradas_recientes = paradas_model.recientes(15)
-    velocidades = base_datos_model.velocidades_recientes(60)
 
     return jsonify({
+        "rango": {"desde": desde, "hasta": hasta},
+        "meses": _serialize_rows(meses),
+        "seleccion": {"anio": anio, "mes": mes},
         "header": header,
+        "kpis": _serialize(kpis),
         "indicadores": _serialize_rows(indicadores),
         "cumplimiento": _serialize_rows(cumplimiento),
         "operatividad": _serialize_rows(operatividad),
