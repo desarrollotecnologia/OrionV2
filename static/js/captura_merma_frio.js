@@ -123,6 +123,81 @@
     [machos, hembras, pc, pf].forEach(el => el.addEventListener(ev, recalcular));
   });
 
+  // ---- Auto-relleno de pesos desde SIRT (Desposte) ----
+  const sirtHint = $("f_lote_sirt");
+  let sirtToken = 0;
+  let ultimoLoteSirt = "";
+
+  function setHint(msg, cls) {
+    if (!sirtHint) return;
+    sirtHint.textContent = msg;
+    sirtHint.className = "hint" + (cls ? " " + cls : "");
+  }
+
+  function fmtNum(v) {
+    return (v == null) ? "--" : Number(v).toLocaleString("es-CO", { maximumFractionDigits: 2 });
+  }
+
+  function traerDeSirt() {
+    const loteVal = (lote.value || "").trim();
+    if (loteVal.length < 3) {
+      setHint("Escribe el lote y sal del campo para traer peso caliente/frio.");
+      return;
+    }
+    if (loteVal === ultimoLoteSirt) return;   // evita repetir la misma consulta
+    ultimoLoteSirt = loteVal;
+
+    const token = ++sirtToken;
+    setHint("Buscando en SIRT...", "text-orion-300");
+    const url = "/api/captura/merma-frio/sirt?lote=" + encodeURIComponent(loteVal) +
+      "&cliente=" + encodeURIComponent((cliente.value || "").trim());
+
+    fetch(url, { credentials: "same-origin" })
+      .then(r => r.json().then(j => ({ status: r.status, body: j })))
+      .then(({ status, body }) => {
+        if (token !== sirtToken) return;       // llego una respuesta vieja
+        if (!body.ok || !body.datos) {
+          if (status === 404) setHint("Lote no encontrado en SIRT. Puedes digitar los pesos a mano.", "text-amber-300");
+          else if (status === 503) setHint("SIRT no disponible ahora. Digita los pesos a mano.", "text-amber-300");
+          else setHint(body.error || "No se pudo consultar SIRT.", "text-amber-300");
+          return;
+        }
+        const d = body.datos;
+        if (d.peso_caliente != null) pc.value = d.peso_caliente;
+        if (d.peso_frio != null) pf.value = d.peso_frio;
+        if (d.machos != null) machos.value = d.machos;
+        if (d.hembras != null) hembras.value = d.hembras;
+        // completar solo campos vacios para no pisar lo que el usuario ya eligio
+        if (d.cliente && !cliente.value.trim()) cliente.value = d.cliente;
+        if (d.especie && especie.querySelector(`option[value="${d.especie}"]`) &&
+            (!especie.value || especie.selectedIndex === 0)) {
+          especie.value = d.especie;
+        }
+        if (d.fecha_beneficio) fb.value = d.fecha_beneficio;
+        if (d.fecha_produccion) fp.value = d.fecha_produccion;
+        actualizarDias();
+        recalcular();
+        const partes = [];
+        if (d.peso_caliente != null) partes.push("caliente " + fmtNum(d.peso_caliente) + " kg");
+        if (d.peso_frio != null) partes.push("frio " + fmtNum(d.peso_frio) + " kg");
+        if (d.canales != null) {
+          const sexo = (d.machos != null || d.hembras != null)
+            ? ` (${d.machos || 0}M/${d.hembras || 0}H)` : "";
+          partes.push(`${d.canales} canales${sexo}`);
+        }
+        const cuartos = d.cuartos != null ? ` · ${d.cuartos} cuartos` : "";
+        setHint("SIRT: " + partes.join(" · ") + cuartos + " (lote " + (d.lote || loteVal) + ")", "text-emerald-300");
+      })
+      .catch(() => {
+        if (token !== sirtToken) return;
+        setHint("Fallo la consulta a SIRT. Digita los pesos a mano.", "text-amber-300");
+      });
+  }
+
+  lote.addEventListener("change", traerDeSirt);
+  lote.addEventListener("blur", traerDeSirt);
+  lote.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); traerDeSirt(); } });
+
   $("formMerma").addEventListener("submit", (e) => {
     e.preventDefault();
     if (!cliente.value.trim()) { Live.toast("El cliente es obligatorio", "warn"); cliente.focus(); return; }
@@ -156,6 +231,8 @@
           totalAuto.value = "";
           $("prev_total").textContent = "0";
           $("prev_merma").textContent = "--";
+          ultimoLoteSirt = "";
+          setHint("Escribe el lote y sal del campo para traer peso caliente/frio.");
           cargarManuales();
         } else {
           Live.toast(data.error || "No se pudo guardar", "error");

@@ -25,6 +25,7 @@ from models import (
     usabilidad as usabilidad_model,
 )
 from config import config
+from database import sirt as sirt_db
 from services import live as live_bus
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -374,6 +375,36 @@ def captura_merma_list():
     return jsonify({
         "manuales": _serialize_rows(merma_model.manuales_recientes(50)),
     })
+
+
+_ESPECIE_SIRT = {
+    "BOVINO": "BOVINOS", "BOVINOS": "BOVINOS",
+    "BUFALINO": "BUFALINOS", "BUFALINOS": "BUFALINOS",
+    "PORCINO": "PORCINOS", "PORCINOS": "PORCINOS",
+}
+
+
+@bp.route("/captura/merma-frio/sirt")
+@login_required
+def captura_merma_sirt():
+    """Trae peso caliente y peso frio de SIRT (Desposte) para un lote."""
+    lote = (request.args.get("lote") or "").strip()
+    cliente = (request.args.get("cliente") or "").strip()
+    if not lote:
+        return jsonify({"ok": False, "error": "Falta el lote"}), 400
+    if not sirt_db.disponible():
+        return jsonify({"ok": False, "error": "Conexion a SIRT no disponible"}), 503
+
+    datos = sirt_db.pesos_por_lote(lote, cliente)
+    if not datos:
+        return jsonify({"ok": False, "encontrado": False,
+                        "error": "Lote no encontrado en SIRT"}), 404
+
+    if datos.get("especie"):
+        datos["especie"] = _ESPECIE_SIRT.get(
+            datos["especie"].strip().upper(), datos["especie"].strip().upper()
+        )
+    return jsonify({"ok": True, "encontrado": True, "datos": datos})
 
 
 @bp.route("/captura/merma-frio/<int:reg_id>", methods=["DELETE"])

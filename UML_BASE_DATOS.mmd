@@ -1,0 +1,235 @@
+erDiagram
+    users {
+        int id PK
+        string username UK
+        string password_hash
+        string nombre
+        string rol
+        bool activo
+        bool must_change_password
+        datetime creado_en
+    }
+
+    indicadores_orion {
+        int id PK
+        int mes
+        int anio
+        date fecha
+        string seccion
+        string bloque
+        int item
+        string criterio
+        float hoy
+        float acumulado
+        float meta
+        float ejecutado
+        float cumplimiento
+        float cantidad
+        float porcentaje
+        datetime actualizado_en
+    }
+
+    base_datos {
+        int id PK
+        int item
+        date fecha
+        int mes
+        int anio
+        string cliente
+        string especie
+        string limpieza
+        string proceso
+        int operarios
+        string lote
+        float canales
+        float kilos
+        string hora_inicio
+        string hora_fin
+        string tiempo_reposo
+        string tiempo_total
+        float velocidad_canal_h
+        float velocidad_kilos_h
+        float velocidad_canal_hh
+        string mes_texto
+        string origen
+        datetime creado_en
+    }
+
+    merma_frio {
+        int id PK
+        int item
+        date fecha_beneficio
+        date fecha_produccion
+        int mes
+        string cliente
+        string especie
+        float cant_machos
+        float cant_hembras
+        float total_canales
+        string lote
+        float peso_caliente
+        float peso_frio
+        float merma_frio
+        string cava
+        string observaciones
+        string mes_texto
+        int anio
+        date fecha
+        string origen
+        datetime creado_en
+    }
+
+    merma_resumen {
+        int id PK
+        int item
+        int anio
+        string mes_texto
+        int mes_num
+        float merma_prom_mensual
+        float merma_prom_anual
+        float comportamiento
+        string periodo
+    }
+
+    ppto_desp {
+        int id PK
+        int anio
+        string mes_texto
+        int mes_num
+        float meta
+        float ejecucion
+        float cumplimiento
+    }
+
+    tablero_ind {
+        int id PK
+        string especie
+        int semana
+        float meta
+        float ejecucion
+        float cumplimiento
+    }
+
+    reporte_operatividad {
+        int id PK
+        string item
+        string criterio
+        float cant_personas
+        float porcentaje
+        string operarios
+    }
+
+    reporte_extras {
+        int id PK
+        int item
+        string mes_texto
+        int mes_num
+        float extras
+        float promedio_he_dia
+        float promedio_dia_oper
+    }
+
+    reporte_kilogramos {
+        int id PK
+        int item
+        string concepto
+        string mes_texto
+        int mes_num
+        float kilogramos
+    }
+
+    paradas_std {
+        int id PK
+        date fecha
+        float tardanza_inicio
+        float lavado_desinfeccion
+        float dano_sistema_1
+        float dano_sistema_2
+        float fallas_electricas
+        float fallas_sistema
+        float falta_canastillas
+        float parada_alimentacion
+        float recepcion_entrega
+        float reunion_magica
+        float total
+        string observaciones
+        string extras_json
+        string origen
+        datetime creado_en
+    }
+
+    paradas_categorias {
+        int id PK
+        string clave UK
+        string etiqueta
+        string columna_bd
+        bool es_sistema
+        bool activo
+        datetime creado_en
+    }
+
+    tiempo_produccion {
+        int id PK
+        string cliente
+        float canales
+        float canales_promedio
+        string tiempo_promedio
+        string tiempo_estimado
+    }
+
+    proyecciones {
+        int id PK
+        date fecha
+        string titulo
+        string hora_inicio
+        string descanso
+        string parada
+        string duracion
+        string salida
+        string tiempo_planta
+        string aplica_comidas
+        int total_canales
+        int total_operarios
+        string total_tiempo
+        string desposte_json
+        string porcionado_json
+        string creado_por
+        datetime creado_en
+    }
+
+    cliente_contactos {
+        int id PK
+        string cliente
+        string email
+        bool activo
+        datetime creado_en
+    }
+
+    email_log {
+        int id PK
+        string destinatario
+        string cliente
+        string asunto
+        string documentos
+        string estado
+        string mensaje
+        string enviado_por
+        datetime enviado_en
+    }
+
+    sync_log {
+        int id PK
+        datetime sincronizado_en
+        string archivo
+        string estado
+        string mensaje
+        float duracion_seg
+    }
+
+    users ||--o{ proyecciones : "crea (logico por creado_por)"
+    users ||--o{ email_log : "envia (logico por enviado_por)"
+    cliente_contactos ||--o{ email_log : "destinatarios por cliente"
+    paradas_categorias ||..o{ paradas_std : "extiende categorias (extras_json)"
+    base_datos ||..o{ tiempo_produccion : "referencias por cliente"
+    base_datos ||..o{ proyecciones : "insumo de planeacion"
+    merma_frio ||..o{ merma_resumen : "agregacion mensual"
