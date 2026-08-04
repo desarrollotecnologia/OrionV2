@@ -19,6 +19,10 @@ log = logging.getLogger("orion.sirt")
 
 _local = threading.local()
 
+
+class SirtConexionError(Exception):
+    """No se pudo conectar / consultar SIRT (problema de red o credenciales)."""
+
 try:  # el driver puede no estar instalado en algun entorno
     import psycopg2
     from psycopg2.extras import RealDictCursor
@@ -91,8 +95,13 @@ def disponible() -> bool:
 
 
 def _get_connection():
-    if not disponible():
-        return None
+    """Devuelve una conexion viva a SIRT o lanza SirtConexionError."""
+    if not _DRIVER_OK:
+        raise SirtConexionError("El driver psycopg2 no esta instalado (pip install psycopg2-binary)")
+    if not config.SIRT_ENABLED:
+        raise SirtConexionError("SIRT esta deshabilitado (SIRT_ENABLED=False)")
+    if not config.SIRT_HOST:
+        raise SirtConexionError("Falta POSTGRES_HOST en el .env del servidor")
     conn = getattr(_local, "conn", None)
     if conn is not None:
         try:
@@ -116,7 +125,34 @@ def _get_connection():
     except Exception as exc:  # noqa: BLE001
         log.warning("No se pudo conectar a SIRT: %s", exc)
         _local.conn = None
-        return None
+        raise SirtConexionError(
+            f"No se pudo conectar a SIRT en {config.SIRT_HOST}:{config.SIRT_PORT} ({exc})"
+        ) from exc
+
+
+def diagnostico() -> dict[str, Any]:
+    """Estado de la conexion a SIRT para depurar desde el servidor."""
+    info: dict[str, Any] = {
+        "driver_instalado": _DRIVER_OK,
+        "habilitado": bool(config.SIRT_ENABLED),
+        "host": config.SIRT_HOST or None,
+        "puerto": config.SIRT_PORT,
+        "base": config.SIRT_DB or None,
+        "usuario": config.SIRT_USER or None,
+        "conecta": False,
+        "error": None,
+    }
+    try:
+        conn = _get_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+        info["conecta"] = True
+    except SirtConexionError as exc:
+        info["error"] = str(exc)
+    except Exception as exc:  # noqa: BLE001
+        info["error"] = str(exc)
+    return info
 
 
 def _to_float(value: Any) -> float | None:
@@ -145,9 +181,7 @@ def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
     lote = (lote or "").strip()
     if not lote:
         return None
-    conn = _get_connection()
-    if conn is None:
-        return None
+    conn = _get_connection()  # lanza SirtConexionError si no hay conexion
 
     cliente = (cliente or "").strip()
 
@@ -176,7 +210,7 @@ def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
         except Exception:  # noqa: BLE001
             pass
         _local.conn = None
-        return None
+        raise SirtConexionError(f"Error consultando SIRT: {exc}") from exc
 
     if not row:
         return None
