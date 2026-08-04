@@ -416,7 +416,11 @@ def captura_merma_sirt():
     if not sirt_db.disponible():
         return jsonify({"ok": False, "error": "Conexion a SIRT no disponible"}), 503
 
-    datos = sirt_db.pesos_por_lote(lote, cliente)
+    try:
+        datos = sirt_db.pesos_por_lote(lote, cliente)
+    except sirt_db.SirtConexionError as exc:
+        return jsonify({"ok": False, "encontrado": False,
+                        "error": f"Sin conexion a SIRT: {exc}"}), 503
     if not datos:
         return jsonify({"ok": False, "encontrado": False,
                         "error": "Lote no encontrado en SIRT"}), 404
@@ -426,6 +430,13 @@ def captura_merma_sirt():
             datos["especie"].strip().upper(), datos["especie"].strip().upper()
         )
     return jsonify({"ok": True, "encontrado": True, "datos": datos})
+
+
+@bp.route("/captura/merma-frio/sirt/diagnostico")
+@login_required
+def captura_merma_sirt_diag():
+    """Estado de la conexion a SIRT (para depurar desde el servidor)."""
+    return jsonify(sirt_db.diagnostico())
 
 
 @bp.route("/captura/merma-frio/<int:reg_id>", methods=["DELETE"])
