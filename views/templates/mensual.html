@@ -10,19 +10,49 @@
     </h1>
     <p class="text-slate-400 text-sm mt-1">Indicadores, cumplimiento, operatividad, paradas y velocidades</p>
   </div>
-  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
-    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span class="text-slate-300">Sincronizado:</span>
-    <span id="lastSync" class="text-slate-100 font-medium">--</span>
+  <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 bg-slate-900/70 border border-slate-800 rounded-xl px-3 py-2 text-xs">
+      <span class="text-slate-400">Mes</span>
+      <select id="selMes" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 text-xs focus:outline-none"></select>
+    </div>
+    <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="text-slate-300">Sincronizado:</span>
+      <span id="lastSync" class="text-slate-100 font-medium">--</span>
+    </div>
   </div>
 </header>
+
+<!-- KPIs del mes (en vivo desde la base) -->
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="card !p-4">
+    <p class="text-xs uppercase tracking-wide text-slate-400">Canales del mes</p>
+    <p id="kpiCanales" class="text-2xl font-bold text-cyan-300 mt-1">--</p>
+    <p id="kpiLotes" class="text-xs text-slate-500 mt-0.5">-- lotes</p>
+  </div>
+  <div class="card !p-4">
+    <p class="text-xs uppercase tracking-wide text-slate-400">Kilos procesados</p>
+    <p id="kpiKilos" class="text-2xl font-bold text-emerald-300 mt-1">--</p>
+    <p id="kpiClientes" class="text-xs text-slate-500 mt-0.5">-- clientes</p>
+  </div>
+  <div class="card !p-4">
+    <p class="text-xs uppercase tracking-wide text-slate-400">Merma frio prom.</p>
+    <p id="kpiMerma" class="text-2xl font-bold text-rose-300 mt-1">--</p>
+    <p id="kpiMermaLotes" class="text-xs text-slate-500 mt-0.5">-- lotes</p>
+  </div>
+  <div class="card !p-4">
+    <p class="text-xs uppercase tracking-wide text-slate-400">Paradas del mes</p>
+    <p id="kpiParadas" class="text-2xl font-bold text-amber-300 mt-1">--</p>
+    <p id="kpiParadasDias" class="text-xs text-slate-500 mt-0.5">-- dias</p>
+  </div>
+</section>
 
 <!-- ============= 1. Indicadores del mes ============= -->
 <div class="section-header">
   <div class="icon">1</div>
   <div class="text">
     <h2>Indicadores del mes</h2>
-    <p>Bovinos y Porcinos: # canales, kilos por proceso (HOY y ACUMULADO)</p>
+    <p>Calculado en vivo desde la base: canales, kilos por proceso y lotes por especie</p>
   </div>
   <div class="line"></div>
   <span class="badge">Indicadores</span>
@@ -30,7 +60,7 @@
 <section class="card mb-2">
   <div class="overflow-x-auto">
     <table class="orion-table">
-      <thead><tr><th>Seccion</th><th>#</th><th>Criterio</th><th class="text-right">Hoy</th><th class="text-right">Acumulado</th></tr></thead>
+      <thead><tr><th>Especie</th><th>#</th><th>Criterio</th><th class="text-right">Mes</th><th class="text-right">Acum. año</th></tr></thead>
       <tbody id="tablaIndicadores"></tbody>
     </table>
   </div>
@@ -145,7 +175,7 @@
 <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
   <div class="card overflow-hidden">
     <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Velocidades de operaciones</h3>
-    <p class="text-xs text-slate-500 mb-3">Ultimos 60 dias con datos</p>
+    <p class="text-xs text-slate-500 mb-3">Registros del mes seleccionado</p>
     <div class="overflow-x-auto max-h-96">
       <table class="orion-table">
         <thead><tr><th>Fecha</th><th>Cliente</th><th>Especie</th><th>Proceso</th><th class="text-right">Canal/h</th><th class="text-right">Kg/h</th></tr></thead>
@@ -155,7 +185,7 @@
   </div>
   <div class="card overflow-hidden">
     <h3 class="text-sm font-bold mb-3 uppercase tracking-wide text-slate-300">Reporte de paradas</h3>
-    <p class="text-xs text-slate-500 mb-3">Ultimos registros del Excel</p>
+    <p class="text-xs text-slate-500 mb-3">Registros del mes seleccionado</p>
     <div class="overflow-x-auto max-h-96">
       <table class="orion-table">
         <thead><tr><th>Fecha</th><th class="text-right">Tardanza</th><th class="text-right">Lavado</th><th class="text-right">Fallas</th><th class="text-right">Alimentacion</th><th class="text-right">Total</th></tr></thead>
@@ -167,5 +197,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/mensual.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mensual.js') }}?v=2"></script>
 {% endblock %}
