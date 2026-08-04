@@ -439,6 +439,48 @@ def captura_merma_sirt_diag():
     return jsonify(sirt_db.diagnostico())
 
 
+@bp.route("/captura/merma-frio/sirt/clientes")
+@login_required
+def captura_merma_sirt_clientes():
+    """Clientes de SIRT con lotes en el rango de fechas (para el buscador)."""
+    desde = (request.args.get("desde") or "").strip()
+    hasta = (request.args.get("hasta") or "").strip()
+    especie = (request.args.get("especie") or "").strip()
+    if not desde and not hasta:
+        return jsonify({"ok": False, "error": "Falta el rango de fechas"}), 400
+    if not sirt_db.disponible():
+        return jsonify({"ok": False, "error": "Conexion a SIRT no disponible"}), 503
+    try:
+        clientes = sirt_db.clientes_por_rango(desde, hasta, especie)
+    except sirt_db.SirtConexionError as exc:
+        return jsonify({"ok": False, "error": f"Sin conexion a SIRT: {exc}"}), 503
+    return jsonify({"ok": True, "clientes": clientes})
+
+
+@bp.route("/captura/merma-frio/sirt/lotes")
+@login_required
+def captura_merma_sirt_lotes():
+    """Lotes de SIRT (con pesos) en el rango de fechas, opcional por cliente."""
+    desde = (request.args.get("desde") or "").strip()
+    hasta = (request.args.get("hasta") or "").strip()
+    cliente = (request.args.get("cliente") or "").strip()
+    especie = (request.args.get("especie") or "").strip()
+    if not desde and not hasta:
+        return jsonify({"ok": False, "error": "Falta el rango de fechas"}), 400
+    if not sirt_db.disponible():
+        return jsonify({"ok": False, "error": "Conexion a SIRT no disponible"}), 503
+    try:
+        lotes = sirt_db.lotes_por_rango(desde, hasta, cliente, especie)
+    except sirt_db.SirtConexionError as exc:
+        return jsonify({"ok": False, "error": f"Sin conexion a SIRT: {exc}"}), 503
+    for lt in lotes:
+        if lt.get("especie"):
+            lt["especie"] = _ESPECIE_SIRT.get(
+                lt["especie"].strip().upper(), lt["especie"].strip().upper()
+            )
+    return jsonify({"ok": True, "lotes": lotes})
+
+
 @bp.route("/captura/merma-frio/<int:reg_id>", methods=["DELETE"])
 @login_required
 def captura_merma_delete(reg_id: int):

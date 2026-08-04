@@ -89,6 +89,73 @@ LIMIT 1
 """
 
 
+# Clientes que tienen lotes producidos (recepcion) dentro de un rango de fechas.
+_SQL_CLIENTES_RANGO = """
+SELECT DISTINCT e.nombre AS cliente
+FROM desposte.lote l
+JOIN desposte.plan_desposte pld ON pld.id = l.id_plan_desposte
+JOIN desposte.pedido p          ON p.id = pld.id_pedido
+JOIN desposte.ficha_empresa fe  ON fe.id = p.id_ficha_empresa
+JOIN organizaciones.empresa e   ON e.id = fe.id_empresa
+WHERE l.fecha_creacion::date BETWEEN %(desde)s AND %(hasta)s
+  AND (%(especie)s = '' OR upper(p.especie) LIKE upper(%(especie_like)s))
+ORDER BY e.nombre
+"""
+
+
+# Lotes (uno por lote_externo, el de mayor recepcion) dentro de un rango de fechas.
+_SQL_LOTES_RANGO = """
+SELECT * FROM (
+    SELECT DISTINCT ON (COALESCE(p.lote_externo, l.codigo))
+        l.codigo                           AS lote,
+        p.lote_externo                     AS lote_externo,
+        COALESCE(p.lote_externo, l.codigo) AS lote_display,
+        e.nombre                           AS cliente,
+        p.especie                          AS especie,
+        p.fecha_insensibilizacion          AS fecha_beneficio,
+        l.fecha_creacion                   AS fecha_produccion,
+        w.cuartos, w.canales, w.machos, w.hembras,
+        w.peso_recepcion                   AS peso_frio,
+        w.peso_caliente                    AS peso_caliente
+    FROM desposte.lote l
+    JOIN desposte.plan_desposte pld ON pld.id = l.id_plan_desposte
+    JOIN desposte.pedido p          ON p.id = pld.id_pedido
+    JOIN desposte.ficha_empresa fe  ON fe.id = p.id_ficha_empresa
+    JOIN organizaciones.empresa e   ON e.id = fe.id_empresa
+    JOIN LATERAL (
+        SELECT
+            COUNT(*)              AS cuartos,
+            COUNT(DISTINCT pr.id) AS canales,
+            COUNT(DISTINCT CASE WHEN pr.sexo ILIKE 'macho%%'  THEN pr.id END) AS machos,
+            COUNT(DISTINCT CASE WHEN pr.sexo ILIKE 'hembra%%' THEN pr.id END) AS hembras,
+            SUM(ptlpp.peso)       AS peso_recepcion,
+            SUM(CASE
+                  WHEN tpp.nombre LIKE %(uno)s THEN pr.peso_media_canal_1 / 2.0
+                  WHEN tpp.nombre LIKE %(dos)s THEN pr.peso_media_canal_2 / 2.0
+                  ELSE (COALESCE(pr.peso_media_canal_1, 0) + COALESCE(pr.peso_media_canal_2, 0)) / 4.0
+                END)             AS peso_caliente
+        FROM desposte.puesto_trabajo_lote ptl
+        JOIN desposte.puesto_trabajo_lote_parte_producto ptlpp
+            ON ptlpp.id_puesto_trabajo_lote = ptl.id
+        LEFT JOIN trazabilidad_proceso.parte_producto pp
+            ON pp.identificacion = ptlpp.identificacion_parte_producto
+        LEFT JOIN trazabilidad_proceso.tipo_parte_producto tpp
+            ON tpp.id = pp.id_tipo_parte_producto
+        LEFT JOIN trazabilidad_proceso.producto pr
+            ON pr.id = pp.id_producto
+        WHERE ptl.id_lote = l.id
+    ) w ON TRUE
+    WHERE l.fecha_creacion::date BETWEEN %(desde)s AND %(hasta)s
+      AND (%(cliente)s = '' OR upper(e.nombre) LIKE upper(%(cliente_like)s))
+      AND (%(especie)s = '' OR upper(p.especie) LIKE upper(%(especie_like)s))
+    ORDER BY COALESCE(p.lote_externo, l.codigo), w.cuartos DESC NULLS LAST
+) t
+WHERE t.cuartos > 0
+ORDER BY t.cliente, t.fecha_produccion DESC
+LIMIT 300
+"""
+
+
 def disponible() -> bool:
     """True si el driver esta instalado y SIRT esta habilitado por config."""
     return bool(_DRIVER_OK and config.SIRT_ENABLED and config.SIRT_HOST)
@@ -236,3 +303,103 @@ def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
         "fecha_beneficio": _to_date_iso(row.get("fecha_beneficio")),
         "fecha_produccion": _to_date_iso(row.get("fecha_produccion")),
     }
+
+
+def _especie_like(especie: str) -> str:
+    """Convierte la especie del web (BOVINOS) al patron de SIRT (Bovino%)."""
+    esp = (especie or "").strip()
+    if not esp:
+        return "%"
+    return esp.rstrip("Ss") + "%"
+
+
+def _norm_rango(desde: str, hasta: str) -> tuple[str, str] | None:
+    """Normaliza el rango de fechas (ISO). Si falta uno, usa el otro."""
+    desde = (desde or "").strip()
+    hasta = (hasta or "").strip()
+    if not desde and not hasta:
+        return None
+    if not desde:
+        desde = hasta
+    if not hasta:
+        hasta = desde
+    if desde > hasta:            # por si vienen invertidas
+        desde, hasta = hasta, desde
+    return desde, hasta
+
+
+def clientes_por_rango(desde: str, hasta: str, especie: str = "") -> list[str]:
+    """Nombres de clientes con lotes producidos entre 'desde' y 'hasta' en SIRT."""
+    rango = _norm_rango(desde, hasta)
+    if rango is None:
+        return []
+    d, h = rango
+    especie = (especie or "").strip()
+    conn = _get_connection()
+    params = {
+        "desde": d, "hasta": h,
+        "especie": especie, "especie_like": _especie_like(especie),
+    }
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(_SQL_CLIENTES_RANGO, params)
+            rows = cur.fetchall()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Consulta clientes SIRT fallo (%s a %s): %s", d, h, exc)
+        _local.conn = None
+        raise SirtConexionError(f"Error consultando SIRT: {exc}") from exc
+    return [(r.get("cliente") or "").strip() for r in rows if (r.get("cliente") or "").strip()]
+
+
+def lotes_por_rango(desde: str, hasta: str, cliente: str = "",
+                    especie: str = "") -> list[dict[str, Any]]:
+    """Lotes con recepcion (uno por lote_externo) entre 'desde' y 'hasta' en SIRT.
+
+    Cada item incluye pesos, machos/hembras y canales para autocompletar merma.
+    """
+    rango = _norm_rango(desde, hasta)
+    if rango is None:
+        return []
+    d, h = rango
+    cliente = (cliente or "").strip()
+    especie = (especie or "").strip()
+    conn = _get_connection()
+    params = {
+        "uno": "%1", "dos": "%2",
+        "desde": d, "hasta": h,
+        "cliente": cliente, "cliente_like": f"%{cliente}%",
+        "especie": especie, "especie_like": _especie_like(especie),
+    }
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(_SQL_LOTES_RANGO, params)
+            rows = cur.fetchall()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Consulta lotes SIRT fallo (%s a %s): %s", d, h, exc)
+        _local.conn = None
+        raise SirtConexionError(f"Error consultando SIRT: {exc}") from exc
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        pc = _to_float(row.get("peso_caliente"))
+        pf = _to_float(row.get("peso_frio"))
+        merma = None
+        if pc and pf is not None and pc > 0:
+            merma = round((pc - pf) / pc, 6)
+        out.append({
+            "lote": row.get("lote"),
+            "lote_externo": row.get("lote_externo"),
+            "lote_display": (row.get("lote_display") or "").strip() or None,
+            "cliente": (row.get("cliente") or "").strip() or None,
+            "especie": (row.get("especie") or "").strip() or None,
+            "cuartos": int(row["cuartos"]) if row.get("cuartos") is not None else None,
+            "canales": int(row["canales"]) if row.get("canales") is not None else None,
+            "machos": int(row["machos"]) if row.get("machos") is not None else None,
+            "hembras": int(row["hembras"]) if row.get("hembras") is not None else None,
+            "peso_caliente": pc,
+            "peso_frio": pf,
+            "merma_frio": merma,
+            "fecha_beneficio": _to_date_iso(row.get("fecha_beneficio")),
+            "fecha_produccion": _to_date_iso(row.get("fecha_produccion")),
+        })
+    return out

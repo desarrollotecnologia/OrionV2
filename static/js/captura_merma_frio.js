@@ -51,6 +51,16 @@
 
   let clienteAc = null;
   let cavaAc = null;
+  let loteAc = null;
+  let lotesSirt = {};        // lote_display (upper) -> objeto SIRT del lote
+  let clientesLocales = [];  // fallback: clientes de merma en la BD local
+  const clienteHint = $("f_cliente_sirt");
+  const enc = encodeURIComponent;
+
+  function debounce(fn, ms) {
+    let t = null;
+    return function () { clearTimeout(t); t = setTimeout(fn, ms); };
+  }
 
   function renderAtajos(elId, items, onClick, max = 10) {
     const cont = $(elId);
@@ -75,6 +85,7 @@
       b.addEventListener("click", () => {
         cliente.value = v;
         if (clienteAc) clienteAc.hide();
+        cargarLotesSirt();
         cliente.focus();
       });
       cont.appendChild(b);
@@ -86,11 +97,12 @@
       // Para merma solo bovinos / bufalinos por convencion
       const especiesMerma = (data.especies || []).filter(e => e !== "PORCINOS");
       fillSelect(especie, especiesMerma.length ? especiesMerma : ["BOVINOS", "BUFALINOS"], "Selecciona especie");
-      const clientes = data.clientes_merma || data.clientes || [];
+      clientesLocales = data.clientes_merma || data.clientes || [];
       const cavas = data.cavas || [];
       if (!clienteAc) {
         clienteAc = Live.autocomplete(cliente, $("clienteAcList"), {
-          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`
+          emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q.toUpperCase()}" como cliente nuevo.`,
+          onSelect: () => cargarLotesSirt()
         });
       }
       if (!cavaAc) {
@@ -98,10 +110,25 @@
           emptyMsg: (q) => `Sin coincidencias. Puedes usar "${q}" como cava nueva.`
         });
       }
-      clienteAc.setItems(clientes);
+      if (!loteAc) {
+        loteAc = Live.autocomplete(lote, $("loteAcList"), {
+          minChars: 0, maxItems: 60,
+          emptyMsg: (q) => q ? `Sin lotes que coincidan con "${q}".`
+                              : "Elige fechas, especie y cliente para ver lotes.",
+          onSelect: (val) => {
+            const d = lotesSirt[(val || "").toUpperCase()];
+            ultimoLoteSirt = (lote.value || "").trim();
+            if (d) aplicarDatosSirt(d, val);
+          }
+        });
+      }
+      clienteAc.setItems(clientesLocales);
       cavaAc.setItems(cavas);
       renderAtajos("atajosCavas", cavas, v => { cava.value = v; if (cavaAc) cavaAc.hide(); }, 12);
-      renderClientesAside(clientes);
+      renderClientesAside(clientesLocales);
+      // Carga inicial desde SIRT segun las fechas por defecto
+      cargarClientesSirt();
+      cargarLotesSirt();
     });
   }
 
@@ -138,6 +165,111 @@
     return (v == null) ? "--" : Number(v).toLocaleString("es-CO", { maximumFractionDigits: 2 });
   }
 
+  function setClienteHint(msg, cls) {
+    if (!clienteHint) return;
+    clienteHint.textContent = msg;
+    clienteHint.className = "hint" + (cls ? " " + cls : "");
+  }
+
+  function aplicarDatosSirt(d, loteVal) {
+    if (!d) return;
+    if (d.lote_display && !((lote.value || "").trim())) lote.value = d.lote_display;
+    if (d.peso_caliente != null) pc.value = d.peso_caliente;
+    if (d.peso_frio != null) pf.value = d.peso_frio;
+    if (d.machos != null) machos.value = d.machos;
+    if (d.hembras != null) hembras.value = d.hembras;
+    // completar solo campos vacios para no pisar lo que el usuario ya eligio
+    if (d.cliente && !cliente.value.trim()) cliente.value = d.cliente;
+    if (d.especie && especie.querySelector(`option[value="${d.especie}"]`) &&
+        (!especie.value || especie.selectedIndex === 0)) {
+      especie.value = d.especie;
+    }
+    if (d.fecha_beneficio) fb.value = d.fecha_beneficio;
+    if (d.fecha_produccion) fp.value = d.fecha_produccion;
+    actualizarDias();
+    recalcular();
+    const partes = [];
+    if (d.peso_caliente != null) partes.push("caliente " + fmtNum(d.peso_caliente) + " kg");
+    if (d.peso_frio != null) partes.push("frio " + fmtNum(d.peso_frio) + " kg");
+    if (d.canales != null) {
+      const sexo = (d.machos != null || d.hembras != null)
+        ? ` (${d.machos || 0}M/${d.hembras || 0}H)` : "";
+      partes.push(`${d.canales} canales${sexo}`);
+    }
+    const cuartos = d.cuartos != null ? ` · ${d.cuartos} cuartos` : "";
+    setHint("SIRT: " + partes.join(" · ") + cuartos + " (lote " + (d.lote_display || d.lote || loteVal) + ")", "text-emerald-300");
+  }
+
+  // ---- Clientes disponibles en SIRT para el rango de fechas ----
+  let clientesToken = 0;
+  function cargarClientesSirt() {
+    const desde = fb.value || fp.value;
+    const hasta = fp.value || fb.value;
+    if (!desde && !hasta) return;
+    const token = ++clientesToken;
+    const url = "/api/captura/merma-frio/sirt/clientes?desde=" + enc(desde) +
+      "&hasta=" + enc(hasta) + "&especie=" + enc(especie.value || "");
+    setClienteHint("Buscando clientes en SIRT...", "text-orion-300");
+    fetch(url, { credentials: "same-origin" })
+      .then(r => r.json().then(j => ({ status: r.status, body: j })))
+      .then(({ status, body }) => {
+        if (token !== clientesToken) return;
+        if (body.ok && Array.isArray(body.clientes) && body.clientes.length) {
+          if (clienteAc) clienteAc.setItems(body.clientes);
+          renderClientesAside(body.clientes);
+          setClienteHint(body.clientes.length + " clientes con lotes en ese rango (SIRT).", "text-emerald-300");
+        } else {
+          if (clienteAc) clienteAc.setItems(clientesLocales);
+          renderClientesAside(clientesLocales);
+          if (status === 503) setClienteHint("SIRT no disponible; se muestran clientes locales.", "text-amber-300");
+          else setClienteHint("Sin lotes en SIRT para ese rango; se muestran clientes locales.", "text-amber-300");
+        }
+      })
+      .catch(() => {
+        if (token !== clientesToken) return;
+        if (clienteAc) clienteAc.setItems(clientesLocales);
+        renderClientesAside(clientesLocales);
+        setClienteHint("No se pudo consultar SIRT; se muestran clientes locales.", "text-amber-300");
+      });
+  }
+
+  // ---- Lotes disponibles en SIRT para el rango + cliente ----
+  let lotesToken = 0;
+  function cargarLotesSirt() {
+    const desde = fb.value || fp.value;
+    const hasta = fp.value || fb.value;
+    if (!desde && !hasta) return;
+    const token = ++lotesToken;
+    const url = "/api/captura/merma-frio/sirt/lotes?desde=" + enc(desde) +
+      "&hasta=" + enc(hasta) + "&cliente=" + enc((cliente.value || "").trim()) +
+      "&especie=" + enc(especie.value || "");
+    setHint("Buscando lotes en SIRT...", "text-orion-300");
+    fetch(url, { credentials: "same-origin" })
+      .then(r => r.json().then(j => ({ status: r.status, body: j })))
+      .then(({ status, body }) => {
+        if (token !== lotesToken) return;
+        lotesSirt = {};
+        const labels = [];
+        (body.lotes || []).forEach(l => {
+          const disp = l.lote_display || l.lote || "";
+          if (!disp) return;
+          lotesSirt[disp.toUpperCase()] = l;
+          labels.push(disp);
+        });
+        if (loteAc) loteAc.setItems(labels);
+        if (labels.length) setHint(labels.length + " lotes disponibles. Elige uno para traer los pesos.", "text-emerald-300");
+        else if (status === 503) setHint("SIRT no disponible ahora. Digita el lote a mano.", "text-amber-300");
+        else setHint("Sin lotes en SIRT para ese filtro. Puedes digitar el lote.", "text-amber-300");
+      })
+      .catch(() => {
+        if (token !== lotesToken) return;
+        setHint("Fallo la consulta de lotes a SIRT. Digita el lote a mano.", "text-amber-300");
+      });
+  }
+
+  const recargarClientes = debounce(cargarClientesSirt, 350);
+  const recargarLotes = debounce(cargarLotesSirt, 350);
+
   function traerDeSirt() {
     const loteVal = (lote.value || "").trim();
     if (loteVal.length < 3) {
@@ -162,31 +294,7 @@
           else setHint(body.error || "No se pudo consultar SIRT.", "text-amber-300");
           return;
         }
-        const d = body.datos;
-        if (d.peso_caliente != null) pc.value = d.peso_caliente;
-        if (d.peso_frio != null) pf.value = d.peso_frio;
-        if (d.machos != null) machos.value = d.machos;
-        if (d.hembras != null) hembras.value = d.hembras;
-        // completar solo campos vacios para no pisar lo que el usuario ya eligio
-        if (d.cliente && !cliente.value.trim()) cliente.value = d.cliente;
-        if (d.especie && especie.querySelector(`option[value="${d.especie}"]`) &&
-            (!especie.value || especie.selectedIndex === 0)) {
-          especie.value = d.especie;
-        }
-        if (d.fecha_beneficio) fb.value = d.fecha_beneficio;
-        if (d.fecha_produccion) fp.value = d.fecha_produccion;
-        actualizarDias();
-        recalcular();
-        const partes = [];
-        if (d.peso_caliente != null) partes.push("caliente " + fmtNum(d.peso_caliente) + " kg");
-        if (d.peso_frio != null) partes.push("frio " + fmtNum(d.peso_frio) + " kg");
-        if (d.canales != null) {
-          const sexo = (d.machos != null || d.hembras != null)
-            ? ` (${d.machos || 0}M/${d.hembras || 0}H)` : "";
-          partes.push(`${d.canales} canales${sexo}`);
-        }
-        const cuartos = d.cuartos != null ? ` · ${d.cuartos} cuartos` : "";
-        setHint("SIRT: " + partes.join(" · ") + cuartos + " (lote " + (d.lote || loteVal) + ")", "text-emerald-300");
+        aplicarDatosSirt(body.datos, loteVal);
       })
       .catch(() => {
         if (token !== sirtToken) return;
@@ -196,7 +304,12 @@
 
   lote.addEventListener("change", traerDeSirt);
   lote.addEventListener("blur", traerDeSirt);
-  lote.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); traerDeSirt(); } });
+
+  // Cambios de fecha/especie -> refrescar clientes y lotes disponibles en SIRT
+  [fb, fp].forEach(el => el.addEventListener("change", () => { recargarClientes(); recargarLotes(); }));
+  especie.addEventListener("change", () => { recargarClientes(); recargarLotes(); });
+  // Cambio de cliente -> refrescar lotes de ese cliente
+  cliente.addEventListener("change", recargarLotes);
 
   $("formMerma").addEventListener("submit", (e) => {
     e.preventDefault();

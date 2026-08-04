@@ -40,17 +40,18 @@
       <input type="text" name="cliente" id="f_cliente" required autocomplete="off"
              placeholder="Escribe para buscar cliente..." class="inp" />
       <div id="clienteAcList" class="ac-list hidden" role="listbox"></div>
-      <p class="hint">Escribe para buscar. Si es nuevo, escribelo completo y guarda.</p>
+      <p class="hint" id="f_cliente_sirt">Se listan solo los clientes con lotes en SIRT para ese rango de fechas.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
+      <div class="ac-wrap" id="loteAcWrap">
         <label class="lbl">Lote
           <span class="text-[10px] text-orion-300 font-normal">· trae pesos de SIRT</span>
         </label>
         <input type="text" name="lote" id="f_lote" placeholder="MA0365 o 310726-MNZ-1"
                autocomplete="off" class="inp" />
-        <p class="hint" id="f_lote_sirt">Escribe el lote y sal del campo para traer peso caliente/frio.</p>
+        <div id="loteAcList" class="ac-list hidden" role="listbox"></div>
+        <p class="hint" id="f_lote_sirt">Elige fechas, especie y cliente para ver los lotes disponibles.</p>
       </div>
       <div>
         <label class="lbl">Cant. machos</label>
@@ -105,8 +106,8 @@
     <p class="text-xs text-slate-400 mt-1 mb-4">Cavas mas usadas</p>
     <div id="atajosCavas" class="flex flex-wrap gap-2 mb-6"></div>
 
-    <h3 class="text-sm font-bold mt-4 mb-2 text-slate-300 uppercase tracking-wide">Top clientes (merma)</h3>
-    <p class="text-xs text-slate-500 mb-2">Click para autocompletar</p>
+    <h3 class="text-sm font-bold mt-4 mb-2 text-slate-300 uppercase tracking-wide">Clientes en SIRT</h3>
+    <p class="text-xs text-slate-500 mb-2" id="atajosClientesHint">Clientes con lotes en el rango de fechas. Click para elegir.</p>
     <div id="atajosClientes" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1 text-xs"></div>
   </aside>
 </section>
@@ -134,5 +135,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}?v=5"></script>
 {% endblock %}
