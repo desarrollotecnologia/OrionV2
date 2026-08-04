@@ -45,8 +45,12 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label class="lbl">Lote</label>
-        <input type="text" name="lote" id="f_lote" placeholder="CCF390" class="inp" />
+        <label class="lbl">Lote
+          <span class="text-[10px] text-orion-300 font-normal">· trae pesos de SIRT</span>
+        </label>
+        <input type="text" name="lote" id="f_lote" placeholder="MA0365 o 310726-MNZ-1"
+               autocomplete="off" class="inp" />
+        <p class="hint" id="f_lote_sirt">Escribe el lote y sal del campo para traer peso caliente/frio.</p>
       </div>
       <div>
         <label class="lbl">Cant. machos</label>
@@ -130,5 +134,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/captura_merma_frio.js') }}?v=4"></script>
 {% endblock %}

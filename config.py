@@ -41,6 +41,15 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "orion")
 
+    # Postgres SIRT (Desposte) - solo lectura, para traer pesos de recepcion
+    SIRT_ENABLED = _bool(os.getenv("SIRT_ENABLED"), True)
+    SIRT_HOST = _env("POSTGRES_HOST", "SIRT_HOST")
+    SIRT_PORT = int(_env("POSTGRES_PORT", "SIRT_PORT", default="5432"))
+    SIRT_DB = _env("POSTGRES_DB", "SIRT_DB", default="sirt")
+    SIRT_USER = _env("POSTGRES_USER", "SIRT_USER")
+    SIRT_PASSWORD = _env("POSTGRES_PASSWORD", "SIRT_PASSWORD")
+    SIRT_TIMEOUT = float(_env("POSTGRES_TIMEOUT", "SIRT_TIMEOUT", default="12"))
+
     # Excel
     EXCEL_PATH = Path(
         os.getenv("EXCEL_PATH", str(BASE_DIR / "ORION.xlsx"))

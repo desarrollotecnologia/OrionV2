@@ -91,6 +91,18 @@
       <td class="text-right f-tiempo">0:00</td>
       <td class="text-center"><button type="button" class="row-del" title="Quitar">&times;</button></td>
     `;
+    const cli = tr.querySelector(".f-cli");
+    const velhh = tr.querySelector(".f-velhh");
+    cli.addEventListener("change", () => {
+      const ref = buscarVel(cli.value);
+      if (ref && ref.kilos_hh && (!velhh.value || velhh.dataset.auto === "1")) {
+        velhh.value = Number(ref.kilos_hh).toFixed(2);
+        velhh.dataset.auto = "1";
+        velhh.title = `Promedio historico porcionado (${ref.registros || 0} registros)`;
+      }
+      recalc();
+    });
+    velhh.addEventListener("input", () => { velhh.dataset.auto = "0"; });
     tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recalc));
     tr.querySelector(".row-del").addEventListener("click", () => { tr.remove(); recalc(); });
     return tr;
@@ -125,8 +137,8 @@
       const kg = num(tr.querySelector(".f-kg"));
       const operarios = num(tr.querySelector(".f-operarios"));
       const velhh = num(tr.querySelector(".f-velhh"));
-      const velHr = velhh * operarios;
-      const horas = (velHr > 0 && kg > 0) ? kg / velHr : 0;
+      // Igual que el Excel: tiempo estimado = kilos / velocidad kg/hr/hm.
+      const horas = (velhh > 0 && kg > 0) ? kg / velhh : 0;
       tr.querySelector(".f-tiempo").textContent = minToHM(horas * 60);
       pKg += kg;
       if (operarios > pMaxOp) pMaxOp = operarios;

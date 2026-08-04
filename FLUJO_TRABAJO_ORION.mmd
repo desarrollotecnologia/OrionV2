@@ -1,0 +1,60 @@
+flowchart TD
+    A[Inicio de sesion en /login] --> B{Credenciales validas?}
+    B -- No --> A1[Mostrar error de acceso]
+    B -- Si --> C[Crear sesion Flask]
+    C --> D{Debe cambiar contrasena?}
+    D -- Si --> D1[Pantalla cambiar contrasena]
+    D -- No --> E[Entrar al Dashboard]
+
+    E --> F[Frontend solicita /api/dashboard]
+    F --> G[API agrega datos de modelos]
+    G --> H[Render de KPIs, graficas y tablas]
+
+    H --> I{Evento live orion:sync?}
+    I -- Si --> J[Recargar datos de la vista]
+    I -- No --> K[Usuario navega modulos]
+
+    K --> L[Captura manual de Base Datos]
+    K --> M[Captura manual de Merma Frio]
+    K --> N[Captura manual de Paradas]
+    K --> O[Planeacion en Tiempos Proyectados]
+    K --> P[Bot de Correo]
+    K --> Q[Administracion de Usuarios]
+    K --> R[Vista mensual, tablero y paradas]
+
+    L --> S[POST /api/captura/base-datos]
+    M --> T[POST /api/captura/merma-frio]
+    N --> U[POST /api/captura/paradas]
+    O --> V[POST/PUT /api/proyeccion]
+
+    S --> W[Guardar registro origen=manual]
+    T --> W
+    U --> W
+    V --> X[Guardar o actualizar historico]
+
+    W --> Y[Emitir evento orion:sync]
+    X --> Y
+    Y --> J
+
+    P --> P1[Crear batch de envio]
+    P1 --> P2[Subir PDFs por tipo]
+    P2 --> P3[Seleccionar contactos]
+    P3 --> P4[Preview /api/email-bot/preview]
+    P4 --> P5{Datos completos?}
+    P5 -- No --> P2
+    P5 -- Si --> P6[Enviar lote SMTP]
+    P6 --> P7[Registrar resultado en email_log]
+
+    E --> Z{Sincronizacion Excel habilitada?}
+    Z -- Si --> Z1[Watcher detecta cambios de archivo]
+    Z1 --> Z2[Ejecutar import_all]
+    Z2 --> Z3[Registrar en sync_log]
+    Z3 --> Y
+    Z -- No --> Z4[Operacion solo sobre MySQL y capturas manuales]
+
+    E --> U1{Admin hace unlock usabilidad?}
+    U1 -- Si --> U2[POST /api/usabilidad/unlock con comando]
+    U2 --> U3[Session usab_unlock=true]
+    U3 --> U4[Acceso a /_hidden/usabilidad]
+    U4 --> U5[Consulta /api/usabilidad/data]
+    U1 -- No --> U6[Vista usabilidad bloqueada]

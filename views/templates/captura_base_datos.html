@@ -107,9 +107,9 @@
           <p class="metric-hint" id="hint_canal_h">Completa canales, inicio y fin</p>
         </div>
         <div class="metric-card" id="metricKilosH">
-          <p class="metric-label">Kilos / hora</p>
+          <p class="metric-label">Kilos / hombre · hora</p>
           <p class="metric-value" id="prev_kilos_h">--</p>
-          <p class="metric-formula">kilos ÷ horas netas</p>
+          <p class="metric-formula">kilos ÷ horas netas ÷ operarios</p>
           <p class="metric-hint" id="hint_kilos_h">Completa kilos, inicio y fin</p>
         </div>
         <div class="metric-card metric-card-accent" id="metricCanalHH">
@@ -171,5 +171,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=7"></script>
 {% endblock %}

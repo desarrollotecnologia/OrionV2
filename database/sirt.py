@@ -1,0 +1,204 @@
+"""Conector de solo lectura a SIRT (PostgreSQL - modulo Desposte).
+
+Se usa exclusivamente para consultar los pesos de recepcion de un lote
+(peso en caliente y peso de recepcion) y prellenar la captura de Merma Frio.
+
+La conexion es perezosa y por-hilo: si SIRT no esta disponible, las
+funciones devuelven None sin tumbar el resto del aplicativo.
+"""
+from __future__ import annotations
+
+import logging
+import threading
+from datetime import date, datetime
+from typing import Any
+
+from config import config
+
+log = logging.getLogger("orion.sirt")
+
+_local = threading.local()
+
+try:  # el driver puede no estar instalado en algun entorno
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    _DRIVER_OK = True
+except Exception:  # noqa: BLE001
+    psycopg2 = None  # type: ignore
+    RealDictCursor = None  # type: ignore
+    _DRIVER_OK = False
+
+
+# ---------------------------------------------------------------------------
+# Consulta base: reproduce el "Reporte de Recepcion" de SIRT.
+#   peso_frio     = SUM(peso de recepcion por cuarto)  -> desposte.lote.peso
+#   peso_caliente = SUM(peso en caliente por cuarto)   -> media canal / 2 por lado
+# El lado del cuarto se deduce del nombre del tipo de parte producto:
+#   ...Anterior/Posterior 1 -> media_canal_1 ;  ...2 -> media_canal_2
+# ---------------------------------------------------------------------------
+_SQL_PESOS_LOTE = """
+SELECT
+    l.codigo                  AS lote,
+    p.lote_externo            AS lote_externo,
+    e.nombre                  AS cliente,
+    p.especie                 AS especie,
+    p.fecha_insensibilizacion AS fecha_beneficio,
+    l.fecha_creacion          AS fecha_produccion,
+    w.cuartos                 AS cuartos,
+    w.canales                 AS canales,
+    w.machos                  AS machos,
+    w.hembras                 AS hembras,
+    w.peso_recepcion          AS peso_frio,
+    w.peso_caliente           AS peso_caliente
+FROM desposte.lote l
+JOIN desposte.plan_desposte pld ON pld.id = l.id_plan_desposte
+JOIN desposte.pedido p          ON p.id = pld.id_pedido
+JOIN desposte.ficha_empresa fe  ON fe.id = p.id_ficha_empresa
+JOIN organizaciones.empresa e   ON e.id = fe.id_empresa
+JOIN LATERAL (
+    SELECT
+        COUNT(*)         AS cuartos,
+        COUNT(DISTINCT pr.id) AS canales,
+        COUNT(DISTINCT CASE WHEN pr.sexo ILIKE 'macho%%'  THEN pr.id END) AS machos,
+        COUNT(DISTINCT CASE WHEN pr.sexo ILIKE 'hembra%%' THEN pr.id END) AS hembras,
+        SUM(ptlpp.peso)  AS peso_recepcion,
+        SUM(CASE
+              WHEN tpp.nombre LIKE %(uno)s THEN pr.peso_media_canal_1 / 2.0
+              WHEN tpp.nombre LIKE %(dos)s THEN pr.peso_media_canal_2 / 2.0
+              ELSE (COALESCE(pr.peso_media_canal_1, 0) + COALESCE(pr.peso_media_canal_2, 0)) / 4.0
+            END)         AS peso_caliente
+    FROM desposte.puesto_trabajo_lote ptl
+    JOIN desposte.puesto_trabajo_lote_parte_producto ptlpp
+        ON ptlpp.id_puesto_trabajo_lote = ptl.id
+    LEFT JOIN trazabilidad_proceso.parte_producto pp
+        ON pp.identificacion = ptlpp.identificacion_parte_producto
+    LEFT JOIN trazabilidad_proceso.tipo_parte_producto tpp
+        ON tpp.id = pp.id_tipo_parte_producto
+    LEFT JOIN trazabilidad_proceso.producto pr
+        ON pr.id = pp.id_producto
+    WHERE ptl.id_lote = l.id
+) w ON TRUE
+WHERE (upper(l.codigo) = upper(%(lote)s) OR upper(p.lote_externo) = upper(%(lote)s))
+  AND (%(cliente)s = '' OR upper(e.nombre) LIKE upper(%(cliente_like)s))
+ORDER BY w.cuartos DESC NULLS LAST, l.fecha_creacion DESC
+LIMIT 1
+"""
+
+
+def disponible() -> bool:
+    """True si el driver esta instalado y SIRT esta habilitado por config."""
+    return bool(_DRIVER_OK and config.SIRT_ENABLED and config.SIRT_HOST)
+
+
+def _get_connection():
+    if not disponible():
+        return None
+    conn = getattr(_local, "conn", None)
+    if conn is not None:
+        try:
+            if conn.closed == 0:
+                return conn
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        conn = psycopg2.connect(
+            host=config.SIRT_HOST,
+            port=config.SIRT_PORT,
+            dbname=config.SIRT_DB,
+            user=config.SIRT_USER,
+            password=config.SIRT_PASSWORD,
+            connect_timeout=int(config.SIRT_TIMEOUT),
+            options="-c statement_timeout=15000",
+        )
+        conn.set_session(readonly=True, autocommit=True)
+        _local.conn = conn
+        return conn
+    except Exception as exc:  # noqa: BLE001
+        log.warning("No se pudo conectar a SIRT: %s", exc)
+        _local.conn = None
+        return None
+
+
+def _to_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_date_iso(value: Any) -> str | None:
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return None
+
+
+def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
+    """Devuelve pesos de recepcion de SIRT para un lote (codigo o lote externo).
+
+    Retorna dict con peso_caliente, peso_frio, cuartos, cliente, especie,
+    fecha_beneficio, fecha_produccion; o None si no hay conexion / no existe.
+    """
+    lote = (lote or "").strip()
+    if not lote:
+        return None
+    conn = _get_connection()
+    if conn is None:
+        return None
+
+    cliente = (cliente or "").strip()
+
+    def _consultar(cli: str):
+        params = {
+            "uno": "%1",
+            "dos": "%2",
+            "lote": lote,
+            "cliente": cli,
+            "cliente_like": f"%{cli}%",
+        }
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(_SQL_PESOS_LOTE, params)
+            return cur.fetchone()
+
+    try:
+        row = _consultar(cliente)
+        # Fallback: si filtrar por cliente no arroja nada (el nombre puede
+        # diferir del que usa el web), reintenta solo por lote.
+        if not row and cliente:
+            row = _consultar("")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Consulta SIRT fallo para lote=%s: %s", lote, exc)
+        try:
+            conn.close()
+        except Exception:  # noqa: BLE001
+            pass
+        _local.conn = None
+        return None
+
+    if not row:
+        return None
+
+    peso_caliente = _to_float(row.get("peso_caliente"))
+    peso_frio = _to_float(row.get("peso_frio"))
+    merma = None
+    if peso_caliente and peso_frio is not None and peso_caliente > 0:
+        merma = round((peso_caliente - peso_frio) / peso_caliente, 6)
+
+    return {
+        "lote": row.get("lote"),
+        "lote_externo": row.get("lote_externo"),
+        "cliente": (row.get("cliente") or "").strip() or None,
+        "especie": (row.get("especie") or "").strip() or None,
+        "cuartos": int(row["cuartos"]) if row.get("cuartos") is not None else None,
+        "canales": int(row["canales"]) if row.get("canales") is not None else None,
+        "machos": int(row["machos"]) if row.get("machos") is not None else None,
+        "hembras": int(row["hembras"]) if row.get("hembras") is not None else None,
+        "peso_caliente": peso_caliente,
+        "peso_frio": peso_frio,
+        "merma_frio": merma,
+        "fecha_beneficio": _to_date_iso(row.get("fecha_beneficio")),
+        "fecha_produccion": _to_date_iso(row.get("fecha_produccion")),
+    }

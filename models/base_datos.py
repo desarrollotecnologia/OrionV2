@@ -55,18 +55,47 @@ def velocidades_recientes(dias: int = 30) -> list[dict]:
     )
 
 
+VELOCIDAD_VENTANA = 30  # registros mas recientes por cliente y proceso
+
+
 def velocidades_por_cliente() -> list[dict]:
-    """Promedios historicos de velocidad por cliente, para proyectar tiempos."""
+    """Promedios recientes de velocidad por cliente, para proyectar tiempos.
+
+    Usa solo los ultimos `VELOCIDAD_VENTANA` registros de cada cliente por
+    tipo de proceso (mas fiel a la operacion actual que el promedio de todo
+    el historico):
+
+    - canal_h / canal_hh: ultimos registros del proceso DESPOSTE.
+    - kilos_hh: ultimos registros del proceso PORCIONADO (kilos por
+      hombre-hora), para autocompletar la tabla de porcionado.
+    """
     return db.fetch_all(
         "SELECT cliente, "
-        "       AVG(velocidad_canal_h)  AS canal_h, "
-        "       AVG(velocidad_canal_hh) AS canal_hh, "
-        "       AVG(velocidad_kilos_h)  AS kilos_h, "
-        "       AVG(operarios)          AS operarios_prom, "
-        "       COUNT(*)                AS registros "
-        "FROM base_datos "
-        "WHERE cliente IS NOT NULL AND cliente <> '' "
-        "  AND velocidad_canal_h IS NOT NULL AND velocidad_canal_h > 0 "
+        "       AVG(CASE WHEN cat='DESPOSTE' AND velocidad_canal_h > 0 "
+        "                THEN velocidad_canal_h END)  AS canal_h, "
+        "       AVG(CASE WHEN cat='DESPOSTE' AND velocidad_canal_hh > 0 "
+        "                THEN velocidad_canal_hh END) AS canal_hh, "
+        "       AVG(CASE WHEN cat='PORCIONADO' AND velocidad_kilos_h > 0 "
+        "                THEN velocidad_kilos_h END)  AS kilos_hh, "
+        "       AVG(operarios)                        AS operarios_prom, "
+        "       SUM(CASE WHEN cat='DESPOSTE' THEN 1 ELSE 0 END) AS registros "
+        "FROM ( "
+        "    SELECT cliente, operarios, velocidad_canal_h, velocidad_canal_hh, "
+        "           velocidad_kilos_h, "
+        "           CASE WHEN UPPER(proceso) LIKE '%%DESPOSTE%%'   THEN 'DESPOSTE' "
+        "                WHEN UPPER(proceso) LIKE '%%PORCIONADO%%' THEN 'PORCIONADO' "
+        "                ELSE 'OTRO' END AS cat, "
+        "           ROW_NUMBER() OVER ( "
+        "               PARTITION BY cliente, "
+        "                   CASE WHEN UPPER(proceso) LIKE '%%DESPOSTE%%'   THEN 'DESPOSTE' "
+        "                        WHEN UPPER(proceso) LIKE '%%PORCIONADO%%' THEN 'PORCIONADO' "
+        "                        ELSE 'OTRO' END "
+        "               ORDER BY fecha DESC, id DESC "
+        "           ) AS rn "
+        "    FROM base_datos "
+        "    WHERE cliente IS NOT NULL AND cliente <> '' "
+        ") t "
+        "WHERE rn <= " + str(int(VELOCIDAD_VENTANA)) + " "
         "GROUP BY cliente"
     )
 
@@ -146,8 +175,10 @@ def _calc_velocidades(
             out["velocidad_canal_h"] = canales / horas
             if operarios:
                 out["velocidad_canal_hh"] = canales / horas / operarios
-        if kilos is not None:
-            out["velocidad_kilos_h"] = kilos / horas
+        if kilos is not None and operarios:
+            # En el Excel esta columna es "VELOCIDAD KILOS X HOMBRE":
+            # kilos por hora normalizados por numero de operarios.
+            out["velocidad_kilos_h"] = kilos / horas / operarios
     return out
 
 

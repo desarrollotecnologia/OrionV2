@@ -165,10 +165,10 @@
     } else {
       setMetric("prev_canal_h", "--", "hint_canal_h", "", "Completa canales, inicio y fin");
     }
-    if (horas && k) {
-      setMetric("prev_kilos_h", (k / horas).toFixed(2), "hint_kilos_h", "Calculado", "Completa kilos, inicio y fin");
+    if (horas && k && op) {
+      setMetric("prev_kilos_h", (k / horas / op).toFixed(2), "hint_kilos_h", "Kilos por operario y hora", "Agrega operarios para calcular");
     } else {
-      setMetric("prev_kilos_h", "--", "hint_kilos_h", "", "Completa kilos, inicio y fin");
+      setMetric("prev_kilos_h", "--", "hint_kilos_h", "", op ? "Completa kilos, inicio y fin" : "Agrega operarios para calcular");
     }
     if (horas && c && op) {
       setMetric("prev_canal_hh", (c / horas / op).toFixed(2), "hint_canal_hh", "Canal por operario y hora", "Agrega operarios para calcular");
