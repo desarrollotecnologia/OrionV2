@@ -88,15 +88,8 @@
     `;
     const cli = tr.querySelector(".f-cli");
     const velh = tr.querySelector(".f-velh");
-    cli.addEventListener("change", () => {
-      const ref = buscarVel(cli.value);
-      if (ref && ref.canal_h && (!velh.value || velh.dataset.auto === "1")) {
-        velh.value = Number(ref.canal_h).toFixed(2);
-        velh.dataset.auto = "1";
-        velh.title = `Promedio historico (${ref.registros || 0} registros)`;
-      }
-      recalc();
-    });
+    cli.addEventListener("change", () => { llenarVelDesposte(tr); recalc(); });
+    cli.addEventListener("input", () => { llenarVelDesposte(tr); });
     velh.addEventListener("input", () => { velh.dataset.auto = "0"; });
     tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recalc));
     tr.querySelector(".row-del").addEventListener("click", () => { tr.remove(); recalc(); });
@@ -115,15 +108,8 @@
     `;
     const cli = tr.querySelector(".f-cli");
     const velhh = tr.querySelector(".f-velhh");
-    cli.addEventListener("change", () => {
-      const ref = buscarVel(cli.value);
-      if (ref && ref.kilos_hh && (!velhh.value || velhh.dataset.auto === "1")) {
-        velhh.value = Number(ref.kilos_hh).toFixed(2);
-        velhh.dataset.auto = "1";
-        velhh.title = `Promedio historico porcionado (${ref.registros || 0} registros)`;
-      }
-      recalc();
-    });
+    cli.addEventListener("change", () => { llenarVelPorcionado(tr); recalc(); });
+    cli.addEventListener("input", () => { llenarVelPorcionado(tr); });
     velhh.addEventListener("input", () => { velhh.dataset.auto = "0"; });
     tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recalc));
     tr.querySelector(".row-del").addEventListener("click", () => { tr.remove(); recalc(); });
@@ -324,7 +310,8 @@
         tr.querySelector(".f-canales").value = row.canales || "";
         tr.querySelector(".f-operarios").value = row.operarios || "";
         tr.querySelector(".f-velh").value = row.vel_canal_h || "";
-        tr.querySelector(".f-velh").dataset.auto = "0";
+        // Si no traia velocidad guardada, dejarla en modo auto para que se rellene sola
+        tr.querySelector(".f-velh").dataset.auto = row.vel_canal_h ? "0" : "1";
         $("tbodyDesposte").appendChild(tr);
       });
       if (!(p.desposte || []).length) $("tbodyDesposte").appendChild(nuevaFilaDesposte());
@@ -335,10 +322,11 @@
         tr.querySelector(".f-kg").value = row.cant_kg || "";
         tr.querySelector(".f-operarios").value = row.operarios || "";
         tr.querySelector(".f-velhh").value = row.vel_kg_hh || "";
+        tr.querySelector(".f-velhh").dataset.auto = row.vel_kg_hh ? "0" : "1";
         $("tbodyPorcionado").appendChild(tr);
       });
       if (!(p.porcionado || []).length) $("tbodyPorcionado").appendChild(nuevaFilaPorcionado());
-      recalc();
+      reaplicarVelocidades();
       Live.toast("Proyeccion cargada", "ok");
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -484,33 +472,38 @@
     }).catch(() => Live.toast("No se pudieron cargar las velocidades historicas", "error"));
   }
 
-  // Reaplica los promedios historicos a las filas que estan en modo auto
-  // (respeta las velocidades que el usuario haya escrito a mano).
+  // Rellena la velocidad de UNA fila de desposte con el promedio historico,
+  // salvo que el usuario la haya escrito a mano.
+  function llenarVelDesposte(tr) {
+    const cli = tr.querySelector(".f-cli");
+    const velh = tr.querySelector(".f-velh");
+    if (!cli || !velh) return;
+    if (velh.dataset.auto === "0" && velh.value) return;  // editado a mano
+    const ref = buscarVel(cli.value);
+    if (ref && ref.canal_h) {
+      velh.value = Number(ref.canal_h).toFixed(2);
+      velh.dataset.auto = "1";
+      velh.title = `Promedio historico (${ref.registros || 0} registros)`;
+    }
+  }
+
+  function llenarVelPorcionado(tr) {
+    const cli = tr.querySelector(".f-cli");
+    const velhh = tr.querySelector(".f-velhh");
+    if (!cli || !velhh) return;
+    if (velhh.dataset.auto === "0" && velhh.value) return;  // editado a mano
+    const ref = buscarVel(cli.value);
+    if (ref && ref.kilos_hh) {
+      velhh.value = Number(ref.kilos_hh).toFixed(2);
+      velhh.dataset.auto = "1";
+      velhh.title = `Promedio historico porcionado (${ref.registros || 0} registros)`;
+    }
+  }
+
+  // Reaplica los promedios historicos a todas las filas en modo auto.
   function reaplicarVelocidades() {
-    $("tbodyDesposte").querySelectorAll("tr").forEach(tr => {
-      const cli = tr.querySelector(".f-cli");
-      const velh = tr.querySelector(".f-velh");
-      if (!cli || !velh) return;
-      if (velh.dataset.auto === "0" && velh.value) return;  // editado a mano
-      const ref = buscarVel(cli.value);
-      if (ref && ref.canal_h) {
-        velh.value = Number(ref.canal_h).toFixed(2);
-        velh.dataset.auto = "1";
-        velh.title = `Promedio historico (${ref.registros || 0} registros)`;
-      }
-    });
-    $("tbodyPorcionado").querySelectorAll("tr").forEach(tr => {
-      const cli = tr.querySelector(".f-cli");
-      const velhh = tr.querySelector(".f-velhh");
-      if (!cli || !velhh) return;
-      if (velhh.dataset.auto === "0" && velhh.value) return;  // editado a mano
-      const ref = buscarVel(cli.value);
-      if (ref && ref.kilos_hh) {
-        velhh.value = Number(ref.kilos_hh).toFixed(2);
-        velhh.dataset.auto = "1";
-        velhh.title = `Promedio historico porcionado (${ref.registros || 0} registros)`;
-      }
-    });
+    $("tbodyDesposte").querySelectorAll("tr").forEach(llenarVelDesposte);
+    $("tbodyPorcionado").querySelectorAll("tr").forEach(llenarVelPorcionado);
     recalc();
   }
 
