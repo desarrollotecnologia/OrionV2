@@ -117,8 +117,9 @@
                               : "Elige fechas, especie y cliente para ver lotes.",
           onSelect: (val) => {
             const d = lotesSirt[(val || "").toUpperCase()];
-            ultimoLoteSirt = (lote.value || "").trim();
-            if (d) aplicarDatosSirt(d, val);
+            if (d) aplicarDatosSirt(d, val);   // pesos inmediatos desde la lista
+            ultimoLoteSirt = "";               // permite que traerDeSirt consulte la cava
+            traerDeSirt();                     // trae la cava (y confirma pesos) del lote puntual
           }
         });
       }
@@ -186,11 +187,17 @@
     }
     if (d.fecha_beneficio) fb.value = d.fecha_beneficio;
     if (d.fecha_produccion) fp.value = d.fecha_produccion;
+    // Cava de almacenamiento (recepcion) traida de SIRT; solo si esta vacia.
+    if (d.cava && !cava.value.trim()) {
+      cava.value = d.cava;
+      if (cavaAc) cavaAc.hide();
+    }
     actualizarDias();
     recalcular();
     const partes = [];
     if (d.peso_caliente != null) partes.push("caliente " + fmtNum(d.peso_caliente) + " kg");
     if (d.peso_frio != null) partes.push("frio " + fmtNum(d.peso_frio) + " kg");
+    if (d.cava) partes.push("cava " + d.cava);
     if (d.canales != null) {
       const sexo = (d.machos != null || d.hembras != null)
         ? ` (${d.machos || 0}M/${d.hembras || 0}H)` : "";
@@ -360,7 +367,7 @@
       $("manualCount").textContent = rows.length;
       const tb = $("tablaManuales");
       if (!rows.length) {
-        tb.innerHTML = '<tr><td colspan="11" class="text-center text-slate-500 py-4">Aun no hay registros manuales</td></tr>';
+        tb.innerHTML = '<tr><td colspan="12" class="text-center text-slate-500 py-4">Aun no hay registros manuales</td></tr>';
         return;
       }
       tb.innerHTML = rows.map(r => `
@@ -369,6 +376,7 @@
           <td>${Live.fmt.date(r.fecha_beneficio)}</td>
           <td>${Live.fmt.date(r.fecha_produccion)}</td>
           <td class="truncate max-w-[180px]" title="${r.cliente || ''}">${r.cliente || '--'}</td>
+          <td class="font-mono" title="${r.lote || ''}">${r.lote || '--'}</td>
           <td>${r.especie || '--'}</td>
           <td class="text-right">${Live.fmt.num(r.total_canales)}</td>
           <td class="text-right">${Live.fmt.num(r.peso_caliente, 1)}</td>

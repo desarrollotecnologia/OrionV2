@@ -9,6 +9,7 @@ funciones devuelven None sin tumbar el resto del aplicativo.
 from __future__ import annotations
 
 import logging
+import re
 import threading
 from datetime import date, datetime
 from typing import Any
@@ -86,6 +87,33 @@ WHERE (upper(l.codigo) = upper(%(lote)s) OR upper(p.lote_externo) = upper(%(lote
   AND (%(cliente)s = '' OR upper(e.nombre) LIKE upper(%(cliente_like)s))
 ORDER BY w.cuartos DESC NULLS LAST, l.fecha_creacion DESC
 LIMIT 1
+"""
+
+
+# Cava de almacenamiento (recepcion) de un lote.
+# La cava se identifica por ANIMAL (id_producto, columna indexada -> rapido) y se
+# toman las cavas numeradas "Cava N" donde reposo el canal antes de bajar a desposte
+# (se excluyen recepcion, pre-refrigeracion, salones, paquete visceral y virtuales,
+# que son transitos de la cadena de frio). Coincide con la columna CAVA del
+# "Reporte de Recepcion" de SIRT. Devuelve TODAS las cavas usadas por el lote.
+_SQL_CAVA_LOTE = """
+WITH animales AS (
+    SELECT DISTINCT pp.id_producto AS animal
+    FROM desposte.lote l
+    JOIN desposte.plan_desposte pld ON pld.id = l.id_plan_desposte
+    JOIN desposte.pedido p          ON p.id = pld.id_pedido
+    JOIN desposte.puesto_trabajo_lote ptl ON ptl.id_lote = l.id
+    JOIN desposte.puesto_trabajo_lote_parte_producto ptlpp
+        ON ptlpp.id_puesto_trabajo_lote = ptl.id
+    JOIN trazabilidad_proceso.parte_producto pp
+        ON pp.identificacion = ptlpp.identificacion_parte_producto
+    WHERE upper(l.codigo) = upper(%(lote)s) OR upper(p.lote_externo) = upper(%(lote)s)
+)
+SELECT DISTINCT cv.nombre AS cava
+FROM animales a
+JOIN trazabilidad_proceso.parte_producto_cava_riel ppcr ON ppcr.id_producto = a.animal
+JOIN trazabilidad_proceso.cava cv ON cv.id = ppcr.id_cava
+WHERE cv.nombre ~ 'Cava [0-9]'
 """
 
 
@@ -288,6 +316,7 @@ def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
     if peso_caliente and peso_frio is not None and peso_caliente > 0:
         merma = round((peso_caliente - peso_frio) / peso_caliente, 6)
 
+    lote_ref = (row.get("lote") or row.get("lote_externo") or lote)
     return {
         "lote": row.get("lote"),
         "lote_externo": row.get("lote_externo"),
@@ -300,9 +329,48 @@ def pesos_por_lote(lote: str, cliente: str = "") -> dict[str, Any] | None:
         "peso_caliente": peso_caliente,
         "peso_frio": peso_frio,
         "merma_frio": merma,
+        "cava": cava_por_lote(lote_ref, conn),
         "fecha_beneficio": _to_date_iso(row.get("fecha_beneficio")),
         "fecha_produccion": _to_date_iso(row.get("fecha_produccion")),
     }
+
+
+def _cava_orden(token: str) -> tuple[int, str]:
+    """Clave de orden numerico para tokens de cava ('10' > '9', '6A' < '6B')."""
+    m = re.match(r"(\d+)(.*)", token)
+    return (int(m.group(1)), m.group(2)) if m else (9999, token)
+
+
+def cava_por_lote(lote: str, conn=None) -> str | None:
+    """Cavas de almacenamiento (recepcion) de un lote, solo los numeros.
+
+    Devuelve los numeros de las cavas usadas, ordenados y separados por espacio
+    (ej. '10' si fue una sola, u '8 10' si repartio en varias). Rapida (~0.05s):
+    filtra por animal. No lanza si falla; retorna None para no bloquear los pesos.
+    """
+    lote = (lote or "").strip()
+    if not lote:
+        return None
+    try:
+        c = conn or _get_connection()
+        with c.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(_SQL_CAVA_LOTE, {"lote": lote})
+            rows = cur.fetchall()
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Consulta cava SIRT fallo para lote=%s: %s", lote, exc)
+        return None
+    # 'Cava 10' -> '10', 'Cava 6B' -> '6B'; se quita el prefijo y se deja el numero.
+    tokens = set()
+    for r in rows:
+        nombre = (r.get("cava") or "").strip()
+        tok = re.sub(r"(?i)^cava\s+", "", nombre).strip()
+        if tok:
+            tokens.add(tok)
+    if not tokens:
+        return None
+    orden = sorted(tokens, key=_cava_orden)
+    # Una sola cava -> el numero; repartido -> solo del que inicia al que termina.
+    return orden[0] if len(orden) == 1 else f"{orden[0]} {orden[-1]}"
 
 
 def _especie_like(especie: str) -> str:

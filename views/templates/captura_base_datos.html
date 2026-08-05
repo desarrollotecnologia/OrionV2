@@ -158,10 +158,15 @@
   <div class="overflow-x-auto">
     <table class="orion-table">
       <thead><tr>
-        <th>Fecha</th><th>Cliente</th><th>Especie</th><th>Proceso</th>
+        <th>Fecha</th><th class="text-right">Mes</th><th class="text-right">Año</th>
+        <th>Cliente</th><th>Especie</th><th>Limpieza</th><th>Proceso</th>
+        <th class="text-right">Operarios</th><th>Lote</th>
         <th class="text-right">Canales</th><th class="text-right">Kilos</th>
-        <th class="text-right">Canal/h</th><th class="text-right">Canal/hom</th><th class="text-right">Kg/h</th>
-        <th>Tiempo</th>
+        <th>Hora inicio</th><th>Hora fin</th><th>Tiempo reposo</th><th>Tiempo total</th>
+        <th class="text-right">Vel. canal/hr</th>
+        <th class="text-right">Vel. kg/hr/hom</th>
+        <th class="text-right">Vel. canal/hr/hom</th>
+        <th>Mes</th>
         <th>Acciones</th>
       </tr></thead>
       <tbody id="tablaManuales"></tbody>
@@ -171,5 +176,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/captura_base_datos.js') }}?v=8"></script>
 {% endblock %}

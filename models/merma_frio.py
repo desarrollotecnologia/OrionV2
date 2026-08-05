@@ -169,7 +169,7 @@ def insertar_manual(payload: dict[str, Any]) -> dict[str, Any]:
 def manuales_recientes(limit: int = 30) -> list[dict]:
     return db.fetch_all(
         "SELECT id, creado_en, item, fecha_beneficio, fecha_produccion, "
-        "       cliente, especie, total_canales, peso_caliente, peso_frio, "
+        "       cliente, especie, lote, total_canales, peso_caliente, peso_frio, "
         "       merma_frio, cava, observaciones "
         "FROM merma_frio WHERE origen='manual' "
         "ORDER BY id DESC LIMIT %s",

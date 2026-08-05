@@ -240,21 +240,30 @@
       $("manualCount").textContent = rows.length;
       const tb = $("tablaManuales");
       if (!rows.length) {
-        tb.innerHTML = '<tr><td colspan="11" class="text-center text-slate-500 py-4">Aun no hay registros manuales</td></tr>';
+        tb.innerHTML = '<tr><td colspan="20" class="text-center text-slate-500 py-4">Aun no hay registros manuales</td></tr>';
         return;
       }
       tb.innerHTML = rows.map(r => `
         <tr>
           <td>${Live.fmt.date(r.fecha)}</td>
+          <td class="text-right">${r.mes ?? '--'}</td>
+          <td class="text-right">${r.anio ?? '--'}</td>
           <td class="truncate max-w-[180px]" title="${r.cliente || ''}">${r.cliente || '--'}</td>
           <td>${r.especie || '--'}</td>
+          <td>${r.limpieza || '--'}</td>
           <td>${r.proceso || '--'}</td>
+          <td class="text-right">${r.operarios ?? '--'}</td>
+          <td class="font-mono" title="${r.lote || ''}">${r.lote || '--'}</td>
           <td class="text-right">${Live.fmt.num(r.canales)}</td>
           <td class="text-right">${Live.fmt.num(r.kilos, 1)}</td>
-          <td class="text-right">${Live.fmt.num(r.velocidad_canal_h, 2)}</td>
-          <td class="text-right">${Live.fmt.num(r.velocidad_canal_hh, 2)}</td>
-          <td class="text-right">${Live.fmt.num(r.velocidad_kilos_h, 1)}</td>
+          <td>${r.hora_inicio || '--'}</td>
+          <td>${r.hora_fin || '--'}</td>
+          <td>${r.tiempo_reposo || '--'}</td>
           <td>${r.tiempo_total || '--'}</td>
+          <td class="text-right">${Live.fmt.num(r.velocidad_canal_h, 2)}</td>
+          <td class="text-right">${Live.fmt.num(r.velocidad_kilos_h, 1)}</td>
+          <td class="text-right">${Live.fmt.num(r.velocidad_canal_hh, 2)}</td>
+          <td>${r.mes_texto || '--'}</td>
           <td><button class="btn-danger" data-id="${r.id}">Eliminar</button></td>
         </tr>
       `).join("");

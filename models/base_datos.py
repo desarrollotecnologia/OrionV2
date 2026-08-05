@@ -299,9 +299,10 @@ def insertar_manual(payload: dict[str, Any]) -> dict[str, Any]:
 
 def manuales_recientes(limit: int = 30) -> list[dict]:
     return db.fetch_all(
-        "SELECT id, creado_en, fecha, cliente, especie, proceso, operarios, "
-        "       canales, kilos, hora_inicio, hora_fin, tiempo_total, operarios, "
-        "       velocidad_canal_h, velocidad_kilos_h, velocidad_canal_hh "
+        "SELECT id, creado_en, fecha, mes, anio, cliente, especie, limpieza, proceso, "
+        "       operarios, lote, canales, kilos, hora_inicio, hora_fin, tiempo_reposo, "
+        "       tiempo_total, velocidad_canal_h, velocidad_kilos_h, velocidad_canal_hh, "
+        "       mes_texto "
         "FROM base_datos WHERE origen='manual' "
         "ORDER BY id DESC LIMIT %s",
         (limit,),
