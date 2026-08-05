@@ -88,8 +88,9 @@
     `;
     const cli = tr.querySelector(".f-cli");
     const velh = tr.querySelector(".f-velh");
-    cli.addEventListener("change", () => { llenarVelDesposte(tr); recalc(); });
-    cli.addEventListener("input", () => { llenarVelDesposte(tr); });
+    // Al cambiar de cliente se reactiva el autocalculo de la velocidad.
+    cli.addEventListener("change", () => { velh.dataset.auto = "1"; recalc(); });
+    // Si el usuario escribe la velocidad a mano, se respeta (deja de autocalcularse).
     velh.addEventListener("input", () => { velh.dataset.auto = "0"; });
     tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recalc));
     tr.querySelector(".row-del").addEventListener("click", () => { tr.remove(); recalc(); });
@@ -123,7 +124,18 @@
     $("tbodyDesposte").querySelectorAll("tr").forEach(tr => {
       const canales = num(tr.querySelector(".f-canales"));
       const operarios = num(tr.querySelector(".f-operarios"));
-      const velh = num(tr.querySelector(".f-velh"));
+      const velhInp = tr.querySelector(".f-velh");
+      // Velocidad canal/hr en vivo = promedio historico canal/hr/hm x operarios
+      // (misma logica del Excel). Se recalcula sola salvo que el usuario la escriba.
+      if (velhInp.dataset.auto !== "0") {
+        const ref = buscarVel(tr.querySelector(".f-cli").value);
+        const auto = (ref && ref.canal_hh && operarios) ? Number(ref.canal_hh) * operarios : 0;
+        velhInp.value = auto ? auto.toFixed(2) : "";
+        velhInp.title = auto
+          ? `Auto: ${Number(ref.canal_hh).toFixed(2)} canal/hr/hm x ${operarios} operarios (${ref.registros || 0} reg.)`
+          : "";
+      }
+      const velh = num(velhInp);
       const velhh = (velh && operarios) ? velh / operarios : 0;
       const horas = (velh > 0 && canales > 0) ? canales / velh : 0;
       tr.querySelector(".f-velhh").textContent = fmtNum(velhh);
@@ -472,21 +484,6 @@
     }).catch(() => Live.toast("No se pudieron cargar las velocidades historicas", "error"));
   }
 
-  // Rellena la velocidad de UNA fila de desposte con el promedio historico,
-  // salvo que el usuario la haya escrito a mano.
-  function llenarVelDesposte(tr) {
-    const cli = tr.querySelector(".f-cli");
-    const velh = tr.querySelector(".f-velh");
-    if (!cli || !velh) return;
-    if (velh.dataset.auto === "0" && velh.value) return;  // editado a mano
-    const ref = buscarVel(cli.value);
-    if (ref && ref.canal_h) {
-      velh.value = Number(ref.canal_h).toFixed(2);
-      velh.dataset.auto = "1";
-      velh.title = `Promedio historico (${ref.registros || 0} registros)`;
-    }
-  }
-
   function llenarVelPorcionado(tr) {
     const cli = tr.querySelector(".f-cli");
     const velhh = tr.querySelector(".f-velhh");
@@ -500,9 +497,9 @@
     }
   }
 
-  // Reaplica los promedios historicos a todas las filas en modo auto.
+  // Reaplica los promedios historicos a las filas en modo auto.
+  // Las de desposte se recalculan solas dentro de recalc().
   function reaplicarVelocidades() {
-    $("tbodyDesposte").querySelectorAll("tr").forEach(llenarVelDesposte);
     $("tbodyPorcionado").querySelectorAll("tr").forEach(llenarVelPorcionado);
     recalc();
   }

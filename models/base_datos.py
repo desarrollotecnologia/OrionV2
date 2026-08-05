@@ -55,21 +55,26 @@ def velocidades_recientes(dias: int = 30) -> list[dict]:
     )
 
 
-VELOCIDAD_VENTANA = 30  # registros mas recientes por cliente y proceso
+# ponytail: replica el rango legado 'BASE DATOS'!$S1:$S934 del Excel: promedia las
+# ~932 filas MAS RECIENTES de toda la planta (todos los clientes/procesos) y luego
+# filtra por cliente + DESPOSTE. Es un corte por numero de filas, no por fecha.
+# Ceiling: si el Excel cambia ese rango, ajustar este numero para que sigan coincidiendo.
+VELOCIDAD_VENTANA = 932
 
 
 def velocidades_por_cliente() -> list[dict]:
-    """Promedios recientes de velocidad por cliente, para proyectar tiempos.
+    """Promedios de velocidad por cliente para proyectar tiempos.
 
-    Usa solo los ultimos `VELOCIDAD_VENTANA` registros de cada cliente por
-    tipo de proceso (mas fiel a la operacion actual que el promedio de todo
-    el historico):
+    Igual que el Excel (hoja TIEMPO PRODUCCION): promedia sobre las
+    `VELOCIDAD_VENTANA` filas mas recientes de TODA la base (ventana global),
+    y luego agrupa por cliente:
 
-    - canal_h / canal_hh: ultimos registros del proceso DESPOSTE.
-    - kilos_hh: ultimos registros del proceso PORCIONADO, expresado como
-      velocidad TOTAL en kg/hr (kilos por hombre-hora * operarios). Asi
-      coincide con la columna "VELOCIDAD KG/HR/HM" del Excel, donde el
-      tiempo estimado = kilos / velocidad.
+    - canal_h / canal_hh: registros del proceso DESPOSTE dentro de la ventana.
+    - kilos_hh: registros PORCIONADO dentro de la ventana, como velocidad TOTAL
+      en kg/hr (kg por hombre-hora * operarios), igual que "VELOCIDAD KG/HR/HM".
+
+    La velocidad canal/hr proyectada = canal_hh * operarios (ver proyeccion.js),
+    y el tiempo estimado = canales / (canal_hh * operarios), como en el Excel.
     """
     return db.fetch_all(
         "SELECT cliente, "
@@ -87,13 +92,7 @@ def velocidades_por_cliente() -> list[dict]:
         "           CASE WHEN UPPER(proceso) LIKE '%%DESPOSTE%%'   THEN 'DESPOSTE' "
         "                WHEN UPPER(proceso) LIKE '%%PORCIONADO%%' THEN 'PORCIONADO' "
         "                ELSE 'OTRO' END AS cat, "
-        "           ROW_NUMBER() OVER ( "
-        "               PARTITION BY cliente, "
-        "                   CASE WHEN UPPER(proceso) LIKE '%%DESPOSTE%%'   THEN 'DESPOSTE' "
-        "                        WHEN UPPER(proceso) LIKE '%%PORCIONADO%%' THEN 'PORCIONADO' "
-        "                        ELSE 'OTRO' END "
-        "               ORDER BY fecha DESC, id DESC "
-        "           ) AS rn "
+        "           ROW_NUMBER() OVER (ORDER BY fecha DESC, id DESC) AS rn "
         "    FROM base_datos "
         "    WHERE cliente IS NOT NULL AND cliente <> '' "
         ") t "
