@@ -5,19 +5,19 @@
   <div>
     <p class="text-orion-400 text-sm uppercase tracking-widest font-semibold">Captura</p>
     <h1 class="text-3xl font-bold mt-1">Merma frio · nuevo lote</h1>
-    <p class="text-slate-400 text-sm mt-1">Registra un lote ingresado a cava. La merma % y dias en cava se calculan solos.</p>
+    <p class="text-[#5b6b63] text-sm mt-1">Registra un lote ingresado a cava. La merma % y dias en cava se calculan solos.</p>
   </div>
-  <div class="flex items-center gap-3 bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2 text-xs">
-    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-    <span class="text-slate-300">Registros manuales:</span>
-    <span id="manualCount" class="text-slate-100 font-medium">--</span>
+  <div class="flex items-center gap-3 bg-white border border-[#dfe5e1] rounded-lg px-4 py-2.5 text-xs shadow-sm">
+    <span class="w-2 h-2 rounded-full bg-orion-500 animate-pulse"></span>
+    <span class="text-[#5b6b63]">Registros manuales:</span>
+    <span id="manualCount" class="text-[#2f3a35] font-semibold">--</span>
   </div>
 </header>
 
 <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
   <form id="formMerma" class="card card-form xl:col-span-2 space-y-5">
     <h2 class="text-lg font-bold mb-1">Datos del lote</h2>
-    <p class="text-xs text-slate-400">Los campos con <span class="text-orion-300">*</span> son obligatorios.</p>
+    <p class="text-xs text-[#5b6b63]">Los campos con <span class="text-orion-600">*</span> son obligatorios.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
@@ -90,9 +90,9 @@
       </div>
     </div>
 
-    <div class="bg-slate-800/40 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-2 gap-2">
-      <p>Total canales: <span id="prev_total" class="text-cyan-300 font-semibold">0</span></p>
-      <p>Merma frio %: <span id="prev_merma" class="text-rose-300 font-semibold">--</span></p>
+    <div class="bg-[#eef1ef] border border-[#dfe5e1] rounded-xl p-3 text-sm text-[#2f3a35] font-medium grid grid-cols-1 md:grid-cols-2 gap-2">
+      <p>Total canales: <span id="prev_total" class="text-[#1f6f54] font-bold">0</span></p>
+      <p>Merma frio %: <span id="prev_merma" class="text-[#c0392b] font-bold">--</span></p>
     </div>
 
     <div class="flex flex-col md:flex-row gap-3 pt-2">
@@ -103,11 +103,11 @@
 
   <aside class="card">
     <h2 class="text-lg font-bold">Atajos</h2>
-    <p class="text-xs text-slate-400 mt-1 mb-4">Cavas mas usadas</p>
+    <p class="text-xs text-[#5b6b63] mt-1 mb-4">Cavas mas usadas</p>
     <div id="atajosCavas" class="flex flex-wrap gap-2 mb-6"></div>
 
-    <h3 class="text-sm font-bold mt-4 mb-2 text-slate-300 uppercase tracking-wide">Clientes en SIRT</h3>
-    <p class="text-xs text-slate-500 mb-2" id="atajosClientesHint">Clientes con lotes en el rango de fechas. Click para elegir.</p>
+    <h3 class="text-sm font-bold mt-4 mb-2 text-[#2f3a35] uppercase tracking-wide">Clientes en SIRT</h3>
+    <p class="text-xs text-[#5b6b63] mb-2" id="atajosClientesHint">Clientes con lotes en el rango de fechas. Click para elegir.</p>
     <div id="atajosClientes" class="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1 text-xs"></div>
   </aside>
 </section>
@@ -116,7 +116,7 @@
   <div class="flex items-center justify-between mb-3">
     <div>
       <h2 class="text-lg font-bold">Lotes manuales recientes</h2>
-      <p class="text-xs text-slate-400">Solo los registros ingresados desde el aplicativo.</p>
+      <p class="text-xs text-[#5b6b63]">Solo los registros ingresados desde el aplicativo.</p>
     </div>
   </div>
   <div class="overflow-x-auto">
