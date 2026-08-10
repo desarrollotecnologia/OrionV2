@@ -479,7 +479,7 @@
       const info = $("velInfo");
       if (info) {
         const hora = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
-        info.textContent = `Velocidades historicas actualizadas a las ${hora} (ultimos 30 registros por cliente).`;
+        info.textContent = `Velocidades historicas actualizadas a las ${hora} (promedio de los ~932 registros mas recientes, igual que el Excel).`;
       }
     }).catch(() => Live.toast("No se pudieron cargar las velocidades historicas", "error"));
   }
