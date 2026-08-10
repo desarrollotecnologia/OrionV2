@@ -90,12 +90,16 @@ LIMIT 1
 """
 
 
-# Cava de almacenamiento (recepcion) de un lote.
-# La cava se identifica por ANIMAL (id_producto, columna indexada -> rapido) y se
-# toman las cavas numeradas "Cava N" donde reposo el canal antes de bajar a desposte
-# (se excluyen recepcion, pre-refrigeracion, salones, paquete visceral y virtuales,
-# que son transitos de la cadena de frio). Coincide con la columna CAVA del
-# "Reporte de Recepcion" de SIRT. Devuelve TODAS las cavas usadas por el lote.
+# Cava de DESPOSTE (recepcion) de un lote.
+# Un canal pasa por MUCHAS cavas de la cadena de frio (salones, pre-refrigeracion,
+# staging logistico, recepcion desposte...) y cada transito queda en cava_riel.
+# Dos filtros dejan solo la cava que muestra el modulo Desposte:
+#   1) cavas numeradas "Cava N"  -> descarta salones/recepciones/visceras.
+#   2) id_muelle IS NOT NULL     -> solo las cavas conectadas a un muelle de
+#      desposte (Cava 5,6A,6B,7,8,9,10). Las Cava 1-4 sin muelle son LOGISTICA
+#      (staging) y no se cuentan, que es justo lo que pidio el usuario.
+# Por animal se toma su ULTIMA cava de desposte (mayor fecha_ingreso) y se
+# devuelve con el conteo de animales para elegir la dominante en Python.
 _SQL_CAVA_LOTE = """
 WITH animales AS (
     SELECT DISTINCT pp.id_producto AS animal
@@ -108,12 +112,16 @@ WITH animales AS (
     JOIN trazabilidad_proceso.parte_producto pp
         ON pp.identificacion = ptlpp.identificacion_parte_producto
     WHERE upper(l.codigo) = upper(%(lote)s) OR upper(p.lote_externo) = upper(%(lote)s)
+),
+ultima AS (
+    SELECT DISTINCT ON (a.animal) a.animal, cv.nombre AS cava
+    FROM animales a
+    JOIN trazabilidad_proceso.parte_producto_cava_riel ppcr ON ppcr.id_producto = a.animal
+    JOIN trazabilidad_proceso.cava cv ON cv.id = ppcr.id_cava
+    WHERE cv.nombre ~ 'Cava [0-9]' AND cv.id_muelle IS NOT NULL
+    ORDER BY a.animal, ppcr.fecha_ingreso DESC
 )
-SELECT DISTINCT cv.nombre AS cava
-FROM animales a
-JOIN trazabilidad_proceso.parte_producto_cava_riel ppcr ON ppcr.id_producto = a.animal
-JOIN trazabilidad_proceso.cava cv ON cv.id = ppcr.id_cava
-WHERE cv.nombre ~ 'Cava [0-9]'
+SELECT cava, COUNT(*) AS n FROM ultima GROUP BY cava ORDER BY n DESC, cava
 """
 
 
@@ -342,11 +350,13 @@ def _cava_orden(token: str) -> tuple[int, str]:
 
 
 def cava_por_lote(lote: str, conn=None) -> str | None:
-    """Cavas de almacenamiento (recepcion) de un lote, solo los numeros.
+    """Cava de desposte (recepcion) de un lote, solo el numero.
 
-    Devuelve los numeros de las cavas usadas, ordenados y separados por espacio
-    (ej. '10' si fue una sola, u '8 10' si repartio en varias). Rapida (~0.05s):
-    filtra por animal. No lanza si falla; retorna None para no bloquear los pesos.
+    Devuelve el numero de la cava de desposte donde quedo el lote (ej. '10').
+    Toma la cava DOMINANTE (donde termino la mayoria de los canales), igual que
+    el modulo Desposte que muestra una sola. Si hay empate real entre varias
+    cavas de desposte, devuelve el rango 'inicio fin'. Rapida (~0.05s). No lanza
+    si falla; retorna None para no bloquear los pesos.
     """
     lote = (lote or "").strip()
     if not lote:
@@ -359,17 +369,24 @@ def cava_por_lote(lote: str, conn=None) -> str | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("Consulta cava SIRT fallo para lote=%s: %s", lote, exc)
         return None
-    # 'Cava 10' -> '10', 'Cava 6B' -> '6B'; se quita el prefijo y se deja el numero.
+    if not rows:
+        return None
+    # ponytail: se muestra solo la cava dominante (mode). Techo: un lote repartido
+    # casi por igual entre dos cavas de desposte solo mostraria las empatadas al
+    # tope; canales sueltos (1-2 animales) que fueron a otra cava no se listan,
+    # que es justo lo que hace el reporte de desposte.
+    tope = max(int(r["n"]) for r in rows)
     tokens = set()
     for r in rows:
-        nombre = (r.get("cava") or "").strip()
-        tok = re.sub(r"(?i)^cava\s+", "", nombre).strip()
+        if int(r["n"]) != tope:
+            continue
+        # 'Cava 10' -> '10', 'Cava 6B' -> '6B'; se quita el prefijo.
+        tok = re.sub(r"(?i)^cava\s+", "", (r.get("cava") or "").strip()).strip()
         if tok:
             tokens.add(tok)
     if not tokens:
         return None
     orden = sorted(tokens, key=_cava_orden)
-    # Una sola cava -> el numero; repartido -> solo del que inicia al que termina.
     return orden[0] if len(orden) == 1 else f"{orden[0]} {orden[-1]}"
 
 
